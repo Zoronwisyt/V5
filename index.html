@@ -1,0 +1,2874 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Flippy v5 · Alight Motion XML Studio</title>
+  <meta name="description" content="Build multi-layer wipes, connected masks, 3D flips, cubes, and Box V2 3D effects for Alight Motion XML.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#070e0a" id="metaThemeColor">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Flippy v5">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=5.2">
+  <link rel="stylesheet" href="editing_tab.css?v=1.0">
+</head>
+<body class="locked">
+
+  <!-- Subtle Technical Drafting Grid -->
+  <div class="studio-backdrop" aria-hidden="true"></div>
+
+  <!-- Studio Access Gate -->
+  <div id="password-overlay" role="dialog" aria-modal="true" aria-labelledby="accessHeading">
+    <div class="access-card" id="accessCard">
+      <div class="access-header-row">
+        <div class="brand-shutter" aria-hidden="true">
+          <span></span><span></span><span></span>
+        </div>
+        <span class="access-tag">LOCKED WORKSPACE</span>
+      </div>
+      <h2 class="access-title" id="accessHeading">Flippy <span>v5</span></h2>
+      <p class="access-sub">Enter your studio key to open the workspace.</p>
+      <div class="access-field">
+        <input type="password" id="website-password" placeholder="Access key" autocomplete="current-password" spellcheck="false" autocapitalize="off" autocorrect="off">
+        <button type="button" class="pw-vis-btn" id="togglePasswordVis" aria-label="Show or hide key" title="Show or hide key">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+        </button>
+      </div>
+      <button id="password-submit" type="button">
+        <span>Unlock Workspace</span>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
+      <p id="password-error" role="alert">Wrong key. Check spelling and try again.</p>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var savedTheme = null;
+      try { savedTheme = localStorage.getItem('flippy_v5_theme') || localStorage.getItem('flippy_v4_theme'); } catch (e) {}
+      if (savedTheme === 'light' || savedTheme === 'dark') {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        var meta = document.getElementById('metaThemeColor');
+        if (meta) meta.setAttribute('content', savedTheme === 'light' ? '#f3efe6' : '#090a0f');
+      }
+
+      var overlay = document.getElementById('password-overlay');
+      var card = document.getElementById('accessCard');
+      var input = document.getElementById('website-password');
+      var submit = document.getElementById('password-submit');
+      var error = document.getElementById('password-error');
+      var visBtn = document.getElementById('togglePasswordVis');
+
+      if (visBtn && input) {
+        visBtn.addEventListener('click', function () {
+          var isPw = input.type === 'password';
+          input.type = isPw ? 'text' : 'password';
+          visBtn.classList.toggle('active', isPw);
+          input.focus();
+        });
+      }
+
+      function unlock() {
+        if (card) card.classList.remove('denied');
+        if (overlay) overlay.classList.add('granted');
+        if (input) input.blur();
+        try { sessionStorage.setItem('flippy_auth', '1'); } catch (e) {}
+
+        setTimeout(function () {
+          document.body.classList.remove('locked');
+          document.body.classList.add('unlocked');
+          if (window.__flippyCheckLayout) window.__flippyCheckLayout();
+          window.dispatchEvent(new Event('resize'));
+          window.scrollTo(0, 0);
+          window.dispatchEvent(new CustomEvent('flippy:unlocked'));
+        }, 220);
+
+        setTimeout(function () {
+          if (overlay) overlay.style.display = 'none';
+          if (window.__flippyCheckLayout) window.__flippyCheckLayout();
+          window.dispatchEvent(new Event('resize'));
+          window.dispatchEvent(new CustomEvent('flippy:unlocked'));
+        }, 520);
+      }
+
+      submit.addEventListener('click', function () {
+        var val = (input.value || '').trim();
+        if (val === 'AjDybantsaisass') {
+          unlock();
+        } else {
+          error.classList.add('show');
+          card.classList.remove('denied');
+          void card.offsetWidth;
+          card.classList.add('denied');
+        }
+      });
+
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.keyCode === 13) {
+          e.preventDefault();
+          submit.click();
+        }
+      });
+
+      input.addEventListener('input', function () {
+        error.classList.remove('show');
+        card.classList.remove('denied');
+      });
+
+      try {
+        if (sessionStorage.getItem('flippy_auth') === '1') {
+          if (overlay) overlay.style.display = 'none';
+          document.body.classList.remove('locked');
+          document.body.classList.add('unlocked');
+        } else {
+          setTimeout(function () { if (window.innerWidth > 860) input.focus(); }, 300);
+        }
+      } catch (e) {}
+    })();
+  </script>
+
+  <!-- Desktop Studio Header -->
+  <header id="app-header">
+    <div class="header-content">
+      <div class="logo-group">
+        <div class="brand-shutter" aria-hidden="true">
+          <span></span><span></span><span></span>
+        </div>
+        <div class="header-meta">
+          <div class="header-title-row">
+            <h1>Flippy</h1>
+            <span class="version-pill">v5</span>
+            <span class="studio-live-indicator" title="Studio Engine Active · 60 FPS Precision"><span class="sli-dot"></span>LIVE</span>
+          </div>
+          <p class="subtitle">Alight Motion XML Toolset</p>
+        </div>
+      </div>
+
+      <!-- Workspace Mode Switcher -->
+      <nav class="app-nav-tabs" id="appNavTabs" aria-label="Workspace modes">
+        <button class="nav-tab active" data-tab="studio" id="navTabStudio" type="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+          <span>Wipe Studio</span>
+        </button>
+        <button class="nav-tab" data-tab="converter" id="navTabConverter" type="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
+          </svg>
+          <span>Media Converter</span>
+        </button>
+        <button class="nav-tab" data-tab="realpreview" id="navTabRealPreview" type="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+            <polyline points="2 17 12 22 22 17"/>
+            <polyline points="2 12 12 17 22 12"/>
+          </svg>
+          <span>Real Preview</span>
+        </button>
+        <button class="nav-tab" data-tab="ytconverter" id="navTabYtConverter" type="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/>
+            <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/>
+          </svg>
+          <span>YT Converter</span>
+        </button>
+        <button class="nav-tab" data-tab="editing" id="navTabEditing" type="button" style="display: none !important;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+          <span>Editing TAB</span>
+        </button>
+      </nav>
+
+      <!-- Live Spec Readout -->
+      <div class="hud-strip" aria-label="Project specifications">
+        <div class="hud-chip"><span class="hud-k">Layers</span><span class="hud-v" id="hudLayers">5</span></div>
+        <div class="hud-chip"><span class="hud-k">Method</span><span class="hud-v" id="hudSlice">MASK</span></div>
+        <div class="hud-chip"><span class="hud-k">Motion</span><span class="hud-v" id="hudMode">FLIP</span></div>
+        <div class="hud-chip"><span class="hud-k">Canvas</span><span class="hud-v" id="hudRes">1080 × 1350</span></div>
+        <div class="hud-chip"><span class="hud-k">Rate</span><span class="hud-v" id="hudFps">60</span></div>
+      </div>
+
+      <div class="header-right">
+        <div class="timecode" id="hudTimecode" title="Playhead position">0.00s</div>
+        <button class="sound-toggle-btn active" id="soundToggleBtn" type="button" title="Toggle Sound Effects (SFX)" aria-label="Toggle Sound Effects">
+          <svg class="icon-sound-on" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          </svg>
+          <svg class="icon-sound-off" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <line x1="23" y1="9" x2="17" y2="15"></line>
+            <line x1="17" y1="9" x2="23" y2="15"></line>
+          </svg>
+        </button>
+        <button class="theme-switch-btn" id="themeToggleBtn" type="button" title="Switch Darkroom / Paper theme" aria-label="Switch color theme">
+          <svg class="icon-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          <svg class="icon-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+        <button class="header-export-btn" id="headerExportBtn" type="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          <span id="headerExportLabel">Export XML</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main id="app-main">
+
+    <!-- Left Column: Inspector -->
+    <section class="panel controls-panel" id="controls-panel">
+      <div class="panel-header">
+        <h2>
+          <span class="ph-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/>
+              <line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/>
+              <line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/>
+              <line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
+            </svg>
+          </span>
+          <span class="ph-text">Inspector<small>Geometry, timing, and 3D motion</small></span>
+        </h2>
+        <button class="ph-action" id="collapseAllBtn" type="button" title="Collapse or expand all sections">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 15 12 20 17 15"/><polyline points="7 9 12 4 17 9"/></svg>
+          <span>Fold All</span>
+        </button>
+      </div>
+
+      <div class="controls-body">
+
+        <!-- Module 01: Canvas & Slicing -->
+        <div class="module open" data-module>
+          <button class="module-head" type="button" aria-expanded="true">
+            <span class="module-index">01</span>
+            <span class="module-title">Canvas &amp; Slicing<small>Method, media, dimensions, color</small></span>
+            <span class="module-chevron" aria-hidden="true"></span>
+          </button>
+          <div class="module-body"><div class="module-inner">
+
+            <!-- Slicing Method -->
+            <div class="control-group">
+              <label>
+                Slicing Method
+                <span class="badge" id="slicingBadge">4:5 MASK ACTIVE</span>
+              </label>
+              <div class="toggle-group" id="wipeMethodToggle">
+                <button class="toggle-btn" data-value="wipe" type="button">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                    <line x1="2" y1="8" x2="14" y2="8"/>
+                    <polyline points="9 3 14 8 9 13"/>
+                  </svg>
+                  Wipe
+                </button>
+                <button class="toggle-btn active" data-value="mask" type="button">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                    <rect x="2" y="2" width="5" height="12" rx="1"/>
+                    <rect x="9" y="2" width="5" height="12" rx="1"/>
+                  </svg>
+                  Mask
+                </button>
+                <button class="toggle-btn" data-value="boxv2" type="button">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                    <path d="M8 1.5L14 5v6l-6 3.5L2 11V5l6-3.5z"/>
+                    <polyline points="2 5 8 8.5 14 5"/>
+                    <line x1="8" y1="14.5" x2="8" y2="8.5"/>
+                  </svg>
+                  Box V2
+                </button>
+              </div>
+              <div class="control-hint">Wipe uses the native wipe2 shader. Mask builds Group &amp; Mask tiles. Box V2 pairs wipe2 with 3D Box and Stretch2 at 2.40x scale.</div>
+            </div>
+
+            <!-- Masking Configuration -->
+            <div id="maskingOptions" class="reveal-box">
+              <div class="control-group">
+                <label>4:5 Geometry Presets</label>
+                <div class="pill-row">
+                  <button type="button" class="preset-pill" id="preset45Fit" title="650 × 812.5 (Project 294)">Fit 4:5 (650 × 812.5)</button>
+                  <button type="button" class="preset-pill active" id="preset45Full" title="1080 × 1350 (Full canvas)">Full 4:5 (1080 × 1350)</button>
+                </div>
+              </div>
+              <div class="control-group" style="margin-bottom: 0;">
+                <label>Scene Grouping</label>
+                <div class="toggle-group" id="maskGroupToggle">
+                  <button class="toggle-btn active" data-value="embed" type="button">EmbedScene Group</button>
+                  <button class="toggle-btn" data-value="direct" type="button">Direct Slices</button>
+                </div>
+                <div class="control-hint">EmbedScene wraps slice groups inside a parent scene matching Project 294.</div>
+              </div>
+            </div>
+
+            <!-- Wipe Effect Configuration -->
+            <div id="wipeOptions" class="reveal-box" style="display: none;">
+              <div class="control-group recommended-setting" style="margin-bottom: 0;">
+                <label>
+                  Auto-Center Slice Pivot
+                  <span class="badge recommended-badge" id="wipeAutoFixBadge">RECOMMENDED: TURN ON</span>
+                </label>
+                <div class="toggle-group" id="wipeAutoFixPivotToggle">
+                  <button class="toggle-btn" data-value="on" type="button">On</button>
+                  <button class="toggle-btn active" data-value="off" type="button">Off</button>
+                </div>
+                <div class="control-hint">Centers the flip pivot on each slice across vertical, horizontal, and diagonal cuts.</div>
+              </div>
+            </div>
+
+            <!-- BOX V2 Configuration -->
+            <div id="boxV2Options" class="reveal-box" style="display: none;">
+              <div class="control-group">
+                <label>
+                  Box V2 Scale Resolution &amp; 3D Box
+                  <span class="badge" id="boxV2FormulaBadge">Rect 1080×1350 · 2.40x Box</span>
+                </label>
+                <div class="control-hint" style="margin-bottom: 8px;">
+                  Rectangle layers in Alight Motion XML stay locked to <strong>1080 × 1350 px</strong> (<code>size = 540, 675</code>, transform scale <code>1.00</code>). Scale <strong>1.00</strong> in the Box effect equals a <strong>450 × 561.7</strong> layer (4:5). Typing your <strong>Scale Resolution</strong> calculates the Box effect scale: <code>scale = Width ÷ 450</code>.
+                </div>
+                <div class="solid-size-row">
+                  <div class="input-group">
+                    <input type="number" id="boxv2ScaleWidth" value="450" min="10" step="any" title="Scale Resolution Width">
+                    <div class="input-suffix">W</div>
+                  </div>
+                  <button class="link-btn active" id="boxv2AspectLinkBtn" type="button" title="Lock 4:5 ratio for Scale Resolution">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                    </svg>
+                  </button>
+                  <div class="input-group">
+                    <input type="number" id="boxv2ScaleHeight" value="562.5" min="10" step="any" title="Scale Resolution Height">
+                    <div class="input-suffix">H</div>
+                  </div>
+                </div>
+                <div class="pill-row" style="margin-top: 8px;">
+                  <button type="button" class="preset-pill" id="boxv2Preset133">600 × 750 (Scale 1.33)</button>
+                  <button type="button" class="preset-pill active" id="boxv2Preset240">1080 × 1350 (Scale 2.40)</button>
+                  <button type="button" class="preset-pill" id="boxv2Preset100">450 × 562.5 (Scale 1.00)</button>
+                  <button type="button" class="preset-pill" id="boxv2Preset200">540 × 675 (Scale 1.20)</button>
+                  <button type="button" class="preset-pill" id="boxv2Preset166">650 × 812.5 (Scale 1.44)</button>
+                </div>
+              </div>
+
+              <div class="control-group">
+                <label>Start Rotation (X, Y, Z)</label>
+                <div class="solid-size-row">
+                  <div class="input-group"><input type="number" id="boxv2StartX" value="0" step="any" title="Start X Rotation"><div class="input-suffix">X</div></div>
+                  <div class="input-group"><input type="number" id="boxv2StartY" value="0" step="any" title="Start Y Rotation"><div class="input-suffix">Y</div></div>
+                  <div class="input-group"><input type="number" id="boxv2StartZ" value="0" step="any" title="Start Z Rotation"><div class="input-suffix">Z</div></div>
+                </div>
+              </div>
+
+              <div class="control-group">
+                <label>End Rotation (X, Y, Z)</label>
+                <div class="solid-size-row">
+                  <div class="input-group"><input type="number" id="boxv2EndX" value="0" step="any" title="End X Rotation"><div class="input-suffix">X</div></div>
+                  <div class="input-group"><input type="number" id="boxv2EndY" value="90" step="any" title="End Y Rotation"><div class="input-suffix">Y</div></div>
+                  <div class="input-group"><input type="number" id="boxv2EndZ" value="0" step="any" title="End Z Rotation"><div class="input-suffix">Z</div></div>
+                </div>
+              </div>
+
+              <div class="control-group">
+                <label>Box Effect Parameters &amp; Ray Marching</label>
+                <div class="solid-size-row">
+                  <div class="input-group"><input type="number" id="boxv2BoxScale" value="2.40" step="0.01" title="Box Effect Scale"><div class="input-suffix">Scale</div></div>
+                  <div class="input-group"><input type="number" id="boxv2BoxHeight" value="1.00" step="0.01" title="Box Height"><div class="input-suffix">H</div></div>
+                  <div class="input-group"><input type="number" id="boxv2MaxIter" value="200" min="10" max="200" step="1" title="Ray Marching Precision (Max 200)"><div class="input-suffix">Precision</div></div>
+                  <input type="hidden" id="boxv2LayerScale" value="2.40">
+                </div>
+                <div class="control-hint" style="margin-top: 4px;">Ray Marching Precision locked to <strong>200 (Max)</strong> for high-definition 3D rendering in Alight Motion.</div>
+              </div>
+
+              <div class="control-group" style="margin-bottom: 0;">
+                <label>Stretch2 Axis (Angle &amp; Scale)</label>
+                <div class="solid-size-row">
+                  <div class="input-group"><input type="number" id="boxv2StretchAngle" value="90" step="1" title="Stretch2 Angle"><div class="input-suffix">Deg</div></div>
+                  <div class="input-group"><input type="number" id="boxv2StretchScale" value="1.25" step="0.01" title="Stretch2 Scale"><div class="input-suffix">Scale</div></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Split Direction -->
+            <div class="control-group">
+              <label>Split Direction</label>
+              <div class="toggle-group split-direction-grid" id="splitDirection">
+                <button class="toggle-btn active" data-value="horizontal" type="button">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                    <rect x="1" y="1" width="14" height="14" rx="2"/>
+                    <line x1="1" y1="5.5" x2="15" y2="5.5"/>
+                    <line x1="1" y1="10.5" x2="15" y2="10.5"/>
+                  </svg>
+                  Horizontal (90°)
+                </button>
+                <button class="toggle-btn" data-value="vertical" type="button">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                    <rect x="1" y="1" width="14" height="14" rx="2"/>
+                    <line x1="5.5" y1="1" x2="5.5" y2="15"/>
+                    <line x1="10.5" y1="1" x2="10.5" y2="15"/>
+                  </svg>
+                  Vertical (0°)
+                </button>
+                <button class="toggle-btn" data-value="diagonal" type="button">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                    <rect x="1" y="1" width="14" height="14" rx="2"/>
+                    <line x1="1" y1="15" x2="15" y2="1"/>
+                    <line x1="1" y1="8" x2="8" y2="1"/>
+                    <line x1="8" y1="15" x2="15" y2="8"/>
+                  </svg>
+                  Diagonal ↗ (45°)
+                </button>
+                <button class="toggle-btn" data-value="diagonal-desc" type="button">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                    <rect x="1" y="1" width="14" height="14" rx="2"/>
+                    <line x1="1" y1="1" x2="15" y2="15"/>
+                    <line x1="1" y1="8" x2="8" y2="15"/>
+                    <line x1="8" y1="1" x2="15" y2="8"/>
+                  </svg>
+                  Diagonal ↘ (135°)
+                </button>
+              </div>
+            </div>
+
+            <!-- Video Layer Toggle -->
+            <div class="control-group">
+              <label>
+                Video Fill Layer
+                <span class="badge amber">MEDIA URI</span>
+              </label>
+              <div class="toggle-group" id="videoLayerToggle">
+                <button class="toggle-btn" data-value="on" type="button">On</button>
+                <button class="toggle-btn active" data-value="off" type="button">Off</button>
+              </div>
+              <div class="control-hint">Export video clip layers instead of solid color shapes.</div>
+            </div>
+
+            <!-- Video Layer Controls -->
+            <div id="videoLayerControls" class="reveal-box" style="display: none;">
+              <div class="control-group">
+                <label for="videoUri">Video Asset URI</label>
+                <input type="text" id="videoUri" value="am-internal:///4BA32805414BE561BE374FA7D5B88C4BF8261057.MP4" spellcheck="false">
+              </div>
+              <div class="control-group" style="margin-bottom: 0;">
+                <label for="videoDurationMs">Video Duration (ms)</label>
+                <input type="number" id="videoDurationMs" value="10450" min="1" step="1">
+              </div>
+            </div>
+
+            <!-- Project Scale -->
+            <div class="control-group">
+              <label for="projectScale">Canvas Resolution</label>
+              <select id="projectScale">
+                <option value="1">1x (1080 × 1350) · Standard</option>
+                <option value="0.5">0.5x (540 × 675) · Half</option>
+                <option value="2">2x (2160 × 2700) · 4K Vertical</option>
+              </select>
+            </div>
+
+            <!-- Solid Geometry -->
+            <div class="control-group">
+              <label id="solidDimensionsLabel">Solid Dimensions (W × H)</label>
+              <div class="solid-size-row">
+                <div class="input-group">
+                  <input type="number" id="solidWidth" value="1080" min="10" step="any" title="Width">
+                  <div class="input-suffix">W</div>
+                </div>
+                <button class="link-btn active" id="aspectLinkBtn" type="button" title="Lock or unlock 4:5 aspect ratio">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                  </svg>
+                </button>
+                <div class="input-group">
+                  <input type="number" id="solidHeight" value="1350" min="10" step="any" title="Height">
+                  <div class="input-suffix">H</div>
+                </div>
+              </div>
+              <div class="control-hint" id="aspectHint">Ratio locked at 4:5</div>
+            </div>
+
+            <!-- Solid Color -->
+            <div class="control-group" style="margin-bottom: 0;">
+              <label for="solidColor">Base Fill Color</label>
+              <div class="color-picker-row">
+                <div class="color-swatch-wrap"><input type="color" id="solidColor" value="#E05A3A"></div>
+                <span class="color-value" id="colorValue">#E05A3A</span>
+              </div>
+            </div>
+          </div></div>
+        </div>
+
+        <!-- Module 02: Timeline -->
+        <div class="module open" data-module>
+          <button class="module-head" type="button" aria-expanded="true">
+            <span class="module-index">02</span>
+            <span class="module-title">Timeline<small>Duration and frame rate</small></span>
+            <span class="module-chevron" aria-hidden="true"></span>
+          </button>
+          <div class="module-body"><div class="module-inner">
+            <div class="control-group" style="margin-bottom: 0;">
+              <label>Scene Duration &amp; Frame Rate</label>
+              <div class="solid-size-row">
+                <div class="input-group" style="flex:2">
+                  <input type="text" id="projectDuration" value="00:05:00" class="time-input" placeholder="MM:SS:FF">
+                </div>
+                <div class="input-group" style="flex:1">
+                  <input type="number" id="projectFps" value="60" step="1" title="FPS">
+                  <div class="input-suffix">FPS</div>
+                </div>
+              </div>
+              <div class="control-hint">Timecode format: MM:SS:FF</div>
+            </div>
+          </div></div>
+        </div>
+
+        <!-- Module 03: Motion -->
+        <div class="module open" data-module>
+          <button class="module-head" type="button" aria-expanded="true">
+            <span class="module-index">03</span>
+            <span class="module-title">Motion<small>3D effect, beat markers, pivot</small></span>
+            <span class="module-chevron" aria-hidden="true"></span>
+          </button>
+          <div class="module-body"><div class="module-inner">
+
+            <!-- Animation Type -->
+            <div class="control-group">
+              <label>
+                3D Effect
+                <span class="badge">KEYFRAMES</span>
+              </label>
+              <div class="toggle-group anim-grid" id="animTypeToggle">
+                <button class="toggle-btn" data-value="none" type="button">None</button>
+                <button class="toggle-btn active" data-value="flip" type="button">Flip</button>
+                <button class="toggle-btn" data-value="box" type="button">Box</button>
+                <button class="toggle-btn" data-value="boxv2" type="button">Box V2</button>
+              </div>
+              <div class="control-hint">Writes 3D effect keyframes directly to each slice in the exported XML.</div>
+            </div>
+
+            <!-- Box V2 Direct Controls in 3D Motion -->
+            <div id="boxV23DMotionControls" class="reveal-box-plain" style="display: none;">
+              <div class="section-block stage">
+                <div class="section-header">
+                  <span class="stage-num" style="background: linear-gradient(135deg, #06b6d4, #0284c7); color: #fff;">V2</span>
+                  Box V2 Scale Resolution &amp; 3D Box Effect
+                </div>
+                <div class="formula-card">
+                  <div class="formula-badge">
+                    <span class="formula-tag" style="background: rgba(6,182,212,0.2); color: var(--cyan); border-color: rgba(6,182,212,0.4);">SHAPES LOCKED AT 1080×1350</span>
+                    <span class="formula-math" id="boxv2FormulaMathDisplay">Box Scale = 1.33 × (1080 ÷ 450) = 3.192x @ 2.40x Mult</span>
+                  </div>
+                  <div class="control-hint" style="margin-top: 6px; font-size: 11px;">
+                    In Box V2 mode, all rectangles (Rectangle 1, Rectangle 1 copy, etc.) are locked to <strong>1080 × 1350</strong> (<code>size = 540, 675</code>). Scale <strong>1.00</strong> in the Box effect equals a <strong>450 × 561.7</strong> layer (4:5). Typing your Scale Resolution calculates the Box effect scale: <code>scale = Width ÷ 450</code>.
+                  </div>
+                </div>
+
+                <div class="control-group" style="margin-top: 12px;">
+                  <label>
+                    Scale Resolution (W × H)
+                    <span class="badge" id="boxv2MotionScaleBadge">2.40x Box Scale</span>
+                  </label>
+                  <div class="solid-size-row">
+                    <div class="input-group">
+                      <input type="number" id="boxv2MotionScaleWidth" value="450" min="10" step="any" title="Scale Resolution Width">
+                      <div class="input-suffix">W</div>
+                    </div>
+                    <button class="link-btn active" id="boxv2MotionAspectLinkBtn" type="button" title="Lock 4:5 ratio for Scale Resolution">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                      </svg>
+                    </button>
+                    <div class="input-group">
+                      <input type="number" id="boxv2MotionScaleHeight" value="562.5" min="10" step="any" title="Scale Resolution Height">
+                      <div class="input-suffix">H</div>
+                    </div>
+                  </div>
+                  <div class="pill-row" style="margin-top: 8px;">
+                    <button type="button" class="preset-pill" id="boxv2Preset133Motion">600 × 750 (Scale 1.33)</button>
+                    <button type="button" class="preset-pill active" id="boxv2Preset240Motion">1080 × 1350 (Scale 2.40)</button>
+                    <button type="button" class="preset-pill" id="boxv2Preset100Motion">450 × 562.5 (Scale 1.00)</button>
+                    <button type="button" class="preset-pill" id="boxv2Preset200Motion">540 × 675 (Scale 1.20)</button>
+                    <button type="button" class="preset-pill" id="boxv2Preset166Motion">650 × 812.5 (Scale 1.44)</button>
+                  </div>
+                </div>
+
+                <div class="control-group" style="margin-bottom: 0;">
+                  <label>Box Effect Parameters &amp; Ray Marching</label>
+                  <div class="solid-size-row">
+                    <div class="input-group"><input type="number" id="boxv2MotionBoxScale" value="2.40" step="0.01" title="Box Effect Scale"><div class="input-suffix">Scale</div></div>
+                    <div class="input-group"><input type="number" id="boxv2MotionBoxHeight" value="1.00" step="0.01" title="Box Height"><div class="input-suffix">H</div></div>
+                    <div class="input-group"><input type="number" id="boxv2MotionMaxIter" value="200" min="10" max="200" step="1" title="Ray Marching Precision (Max 200)"><div class="input-suffix">Precision</div></div>
+                    <input type="hidden" id="boxv2MotionLayerScale" value="2.40">
+                  </div>
+                  <div class="control-hint" style="margin-top: 4px;">Ray Marching Precision locked to <strong>200 (Max)</strong> for high-definition 3D rendering in Alight Motion.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Box Effect Controls -->
+            <div id="boxEffectControls" class="reveal-box-plain" style="display: none;">
+              <div class="section-block stage">
+                <div class="section-header"><span class="stage-num">S1</span>Stage 1: Orientation Flip</div>
+                <div class="control-group">
+                  <label>All Start</label>
+                  <input type="text" id="boxOrientAllStart" value="00:00:00" class="time-input" placeholder="MM:SS:FF">
+                </div>
+                <div class="control-group">
+                  <label>First Layer Ends</label>
+                  <input type="text" id="boxOrientFirstEnd" value="00:02:00" class="time-input" placeholder="MM:SS:FF">
+                </div>
+                <div class="control-group">
+                  <label>Last Layer Ends</label>
+                  <input type="text" id="boxOrientLastEnd" value="00:04:00" class="time-input" placeholder="MM:SS:FF">
+                </div>
+                <div class="control-group">
+                  <label>Start Rotation (X, Y, Z)</label>
+                  <div class="solid-size-row">
+                    <div class="input-group"><input type="number" id="boxOrientStartX" value="0" step="any"><div class="input-suffix">X</div></div>
+                    <div class="input-group"><input type="number" id="boxOrientStartY" value="0" step="any"><div class="input-suffix">Y</div></div>
+                    <div class="input-group"><input type="number" id="boxOrientStartZ" value="0" step="any"><div class="input-suffix">Z</div></div>
+                  </div>
+                </div>
+                <div class="control-group">
+                  <label>End Rotation (X, Y, Z)</label>
+                  <div class="solid-size-row">
+                    <div class="input-group"><input type="number" id="boxOrientEndX" value="0" step="any"><div class="input-suffix">X</div></div>
+                    <div class="input-group"><input type="number" id="boxOrientEndY" value="180" step="any"><div class="input-suffix">Y</div></div>
+                    <div class="input-group"><input type="number" id="boxOrientEndZ" value="0" step="any"><div class="input-suffix">Z</div></div>
+                  </div>
+                </div>
+                <div class="control-group" style="margin-bottom: 0;">
+                  <label>Stage 1 Easing</label>
+                  <button class="open-graph-btn" id="boxOrientEasingBtn" type="button">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                    Edit Bezier Curve
+                  </button>
+                </div>
+              </div>
+
+              <div class="section-block stage">
+                <div class="section-header"><span class="stage-num">S2</span>Stage 2: Secondary Rotation</div>
+                <div class="control-group">
+                  <label>All Start</label>
+                  <input type="text" id="boxRotateAllStart" value="00:01:00" class="time-input" placeholder="MM:SS:FF">
+                </div>
+                <div class="control-group">
+                  <label>First Layer Ends</label>
+                  <input type="text" id="boxRotateFirstEnd" value="00:03:00" class="time-input" placeholder="MM:SS:FF">
+                </div>
+                <div class="control-group">
+                  <label>Last Layer Ends</label>
+                  <input type="text" id="boxRotateLastEnd" value="00:05:00" class="time-input" placeholder="MM:SS:FF">
+                </div>
+                <div class="control-group">
+                  <label>Start Rotation (X, Y, Z)</label>
+                  <div class="solid-size-row">
+                    <div class="input-group"><input type="number" id="boxRotateStartX" value="0" step="any"><div class="input-suffix">X</div></div>
+                    <div class="input-group"><input type="number" id="boxRotateStartY" value="0" step="any"><div class="input-suffix">Y</div></div>
+                    <div class="input-group"><input type="number" id="boxRotateStartZ" value="0" step="any"><div class="input-suffix">Z</div></div>
+                  </div>
+                </div>
+                <div class="control-group">
+                  <label>End Rotation (X, Y, Z)</label>
+                  <div class="solid-size-row">
+                    <div class="input-group"><input type="number" id="boxRotateEndX" value="0" step="any"><div class="input-suffix">X</div></div>
+                    <div class="input-group"><input type="number" id="boxRotateEndY" value="180" step="any"><div class="input-suffix">Y</div></div>
+                    <div class="input-group"><input type="number" id="boxRotateEndZ" value="0" step="any"><div class="input-suffix">Z</div></div>
+                  </div>
+                </div>
+                <div class="control-group" style="margin-bottom: 0;">
+                  <label>Stage 2 Easing</label>
+                  <button class="open-graph-btn" id="boxRotateEasingBtn" type="button">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                    Edit Bezier Curve
+                  </button>
+                </div>
+              </div>
+
+              <div class="section-block stage">
+                <div class="section-header"><span class="stage-num">S3</span>Box Depth, Scale &amp; Shading</div>
+                <div class="readonly-row">
+                  <div class="readonly-field">
+                    <span class="field-label">Depth</span>
+                    <span class="field-value">0.01</span>
+                  </div>
+                  <div class="readonly-field">
+                    <span class="field-label">Scale</span>
+                    <span class="field-value">3.51</span>
+                  </div>
+                </div>
+                <div class="control-group" style="margin-top: 10px; margin-bottom: 0;">
+                  <label>Light Source</label>
+                  <div class="toggle-group" id="boxShadingToggle">
+                    <button class="toggle-btn active" data-value="0" type="button">Flat</button>
+                    <button class="toggle-btn" data-value="1" type="button">Point Light</button>
+                  </div>
+                </div>
+                <div class="control-hint">Standard Alight Motion 3D box shading (Flat = 0, Point Light = 1).</div>
+              </div>
+            </div>
+
+            <!-- Hollow Box Effect Controls (Masking Mode Only) -->
+            <div id="hollowBoxEffectControls" class="reveal-box-plain" style="display: none;">
+              <div class="section-block stage">
+                <div class="section-header">
+                  <span class="stage-num">FX</span>
+                  Stretch Axis Formula
+                </div>
+                <div class="formula-card">
+                  <div class="formula-badge">
+                    <span class="formula-tag">MASK MODE ONLY</span>
+                    <span class="formula-math" id="hbStretchFormulaDisplay">Stretch Scale = Proj W (1080) ÷ Slice W (360) = 3.000x @ 90°</span>
+                  </div>
+                  <div class="control-hint" style="margin-top: 6px;">
+                    Calculates <code>com.alightcreative.effects.stretch2</code> from project resolution and slice dimensions.
+                  </div>
+                  <div class="control-group" style="margin-top: 10px; margin-bottom: 0;">
+                    <label>Stretch Axis Mode</label>
+                    <div class="toggle-group" id="hbStretchModeToggle">
+                      <button class="toggle-btn active" data-value="auto" type="button">Auto</button>
+                      <button class="toggle-btn" data-value="horizontal" type="button">90° Horiz</button>
+                      <button class="toggle-btn" data-value="vertical" type="button">0° Vert</button>
+                      <button class="toggle-btn" data-value="manual" type="button">Manual</button>
+                    </div>
+                  </div>
+                  <div id="hbManualStretchControls" style="display: none; margin-top: 8px;">
+                    <div class="solid-size-row">
+                      <div class="input-group">
+                        <input type="number" id="hbManualAngle" value="90" step="any">
+                        <div class="input-suffix">Deg</div>
+                      </div>
+                      <div class="input-group">
+                        <input type="number" id="hbManualScale" value="3.0" step="0.01">
+                        <div class="input-suffix">Scale</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="section-block stage">
+                <div class="section-header"><span class="stage-num">T</span>Timing &amp; Stagger</div>
+                <div class="control-group">
+                  <label>All Layers Start</label>
+                  <input type="text" id="hbAllStart" value="00:00:00" class="time-input" placeholder="MM:SS:FF">
+                </div>
+                <div class="control-group">
+                  <label>First Layer Ends</label>
+                  <input type="text" id="hbFirstEnd" value="00:02:00" class="time-input" placeholder="MM:SS:FF">
+                </div>
+                <div class="control-group" style="margin-bottom: 0;">
+                  <label>Last Layer Ends</label>
+                  <input type="text" id="hbLastEnd" value="00:04:00" class="time-input" placeholder="MM:SS:FF">
+                </div>
+              </div>
+
+              <div class="section-block stage">
+                <div class="section-header"><span class="stage-num">P1</span>Position (vec3)</div>
+                <div class="control-group">
+                  <label>Start Position (X, Y, Z)</label>
+                  <div class="solid-size-row">
+                    <div class="input-group"><input type="number" id="hbPosStartX" value="0" step="any"><div class="input-suffix">X</div></div>
+                    <div class="input-group"><input type="number" id="hbPosStartY" value="0" step="any"><div class="input-suffix">Y</div></div>
+                    <div class="input-group"><input type="number" id="hbPosStartZ" value="0" step="any"><div class="input-suffix">Z</div></div>
+                  </div>
+                </div>
+                <div class="control-group">
+                  <label>End Position (X, Y, Z)</label>
+                  <div class="solid-size-row">
+                    <div class="input-group"><input type="number" id="hbPosEndX" value="0" step="any"><div class="input-suffix">X</div></div>
+                    <div class="input-group"><input type="number" id="hbPosEndY" value="100" step="any"><div class="input-suffix">Y</div></div>
+                    <div class="input-group"><input type="number" id="hbPosEndZ" value="-25" step="any"><div class="input-suffix">Z</div></div>
+                  </div>
+                </div>
+                <div class="control-group" style="margin-bottom: 0;">
+                  <label>Position Easing</label>
+                  <button class="open-graph-btn" id="hbPosEasingBtn" type="button">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                    Edit Bezier Curve
+                  </button>
+                </div>
+              </div>
+
+              <div class="section-block stage">
+                <div class="section-header"><span class="stage-num">P2</span>Orientation (quat Euler)</div>
+                <div class="control-group">
+                  <label>Start Orientation (X, Y, Z)</label>
+                  <div class="solid-size-row">
+                    <div class="input-group"><input type="number" id="hbOrientStartX" value="0" step="any"><div class="input-suffix">X</div></div>
+                    <div class="input-group"><input type="number" id="hbOrientStartY" value="0" step="any"><div class="input-suffix">Y</div></div>
+                    <div class="input-group"><input type="number" id="hbOrientStartZ" value="0" step="any"><div class="input-suffix">Z</div></div>
+                  </div>
+                </div>
+                <div class="control-group">
+                  <label>End Orientation (X, Y, Z)</label>
+                  <div class="solid-size-row">
+                    <div class="input-group"><input type="number" id="hbOrientEndX" value="0" step="any"><div class="input-suffix">X</div></div>
+                    <div class="input-group"><input type="number" id="hbOrientEndY" value="180" step="any"><div class="input-suffix">Y</div></div>
+                    <div class="input-group"><input type="number" id="hbOrientEndZ" value="0" step="any"><div class="input-suffix">Z</div></div>
+                  </div>
+                </div>
+                <div class="control-group" style="margin-bottom: 0;">
+                  <label>Orientation Easing</label>
+                  <button class="open-graph-btn" id="hbOrientEasingBtn" type="button">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                    Edit Bezier Curve
+                  </button>
+                </div>
+              </div>
+
+              <div class="section-block stage">
+                <div class="section-header"><span class="stage-num">P3</span>Rotation (vec3)</div>
+                <div class="control-group">
+                  <label>Start Rotation (X, Y, Z)</label>
+                  <div class="solid-size-row">
+                    <div class="input-group"><input type="number" id="hbRotateStartX" value="0" step="any"><div class="input-suffix">X</div></div>
+                    <div class="input-group"><input type="number" id="hbRotateStartY" value="0" step="any"><div class="input-suffix">Y</div></div>
+                    <div class="input-group"><input type="number" id="hbRotateStartZ" value="0" step="any"><div class="input-suffix">Z</div></div>
+                  </div>
+                </div>
+                <div class="control-group">
+                  <label>End Rotation (X, Y, Z)</label>
+                  <div class="solid-size-row">
+                    <div class="input-group"><input type="number" id="hbRotateEndX" value="0" step="any"><div class="input-suffix">X</div></div>
+                    <div class="input-group"><input type="number" id="hbRotateEndY" value="180" step="any"><div class="input-suffix">Y</div></div>
+                    <div class="input-group"><input type="number" id="hbRotateEndZ" value="0" step="any"><div class="input-suffix">Z</div></div>
+                  </div>
+                </div>
+                <div class="control-group" style="margin-bottom: 0;">
+                  <label>Rotation Easing</label>
+                  <button class="open-graph-btn" id="hbRotateEasingBtn" type="button">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                    Edit Bezier Curve
+                  </button>
+                </div>
+              </div>
+
+              <div class="section-block stage">
+                <div class="section-header"><span class="stage-num">P4</span>Width &amp; Height</div>
+                <div class="control-group">
+                  <label>Width (Start → End)</label>
+                  <div class="solid-size-row">
+                    <div class="input-group"><input type="number" id="hbWidthStart" value="1.0" step="0.01"><div class="input-suffix">Start</div></div>
+                    <div class="input-group"><input type="number" id="hbWidthEnd" value="1.0" step="0.01"><div class="input-suffix">End</div></div>
+                  </div>
+                </div>
+                <div class="control-group">
+                  <label>Height (Start → End)</label>
+                  <div class="solid-size-row">
+                    <div class="input-group"><input type="number" id="hbHeightStart" value="1.0" step="0.01"><div class="input-suffix">Start</div></div>
+                    <div class="input-group"><input type="number" id="hbHeightEnd" value="1.0" step="0.01"><div class="input-suffix">End</div></div>
+                  </div>
+                </div>
+                <div class="control-group" style="margin-bottom: 0;">
+                  <label>Dimensions Easing</label>
+                  <button class="open-graph-btn" id="hbGeomEasingBtn" type="button">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                    Edit Bezier Curve
+                  </button>
+                </div>
+              </div>
+
+              <div class="section-block stage">
+                <div class="section-header"><span class="stage-num">FX</span>Hollow Box Volume</div>
+                <div class="solid-size-row">
+                  <div class="input-group">
+                    <input type="number" id="hbDepth" value="0.01" step="0.01">
+                    <div class="input-suffix">Depth</div>
+                  </div>
+                  <div class="input-group">
+                    <input type="number" id="hbScale" value="1.0" step="0.01">
+                    <div class="input-suffix">Scale</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Global Beat Timing -->
+            <div id="globalTimingControls" class="reveal-box-plain">
+              <div class="beat-track">
+                <div class="control-group beat">
+                  <label><span class="beat-dot"></span>Beat 1 · All Start</label>
+                  <input type="text" id="beat1" value="00:00:00" class="time-input" placeholder="MM:SS:FF">
+                </div>
+                <div class="control-group beat">
+                  <label><span class="beat-dot"></span>Beat 2 · First Layer Ends</label>
+                  <input type="text" id="beat2" value="00:02:00" class="time-input" placeholder="MM:SS:FF">
+                </div>
+                <div class="control-group beat">
+                  <label><span class="beat-dot"></span>Beat 3 · Last Layer Ends</label>
+                  <input type="text" id="beat3" value="00:04:00" class="time-input" placeholder="MM:SS:FF">
+                </div>
+              </div>
+            </div>
+
+            <div class="control-group recommended-setting" id="autoFixPivotControlGroup">
+              <label>
+                Auto-Center Slice Pivot
+                <span class="badge recommended-badge" id="autoFixPivotBadge">RECOMMENDED: TURN ON</span>
+              </label>
+              <div class="toggle-group" id="autoFixPivotToggle">
+                <button class="toggle-btn" data-value="on" type="button">On</button>
+                <button class="toggle-btn active" data-value="off" type="button">Off</button>
+              </div>
+              <div class="control-hint">Rotates each wipe slice around its own center instead of the canvas origin.</div>
+            </div>
+
+            <div class="control-group" style="margin-bottom: 0;">
+              <label>Global Flip Pivot</label>
+              <div class="solid-size-row">
+                <div class="input-group" style="flex:1">
+                  <input type="number" id="flipPivotX" value="0" step="1" title="Pivot X">
+                  <div class="input-suffix">PX</div>
+                </div>
+                <div class="input-group" style="flex:1">
+                  <input type="number" id="flipPivotY" value="0" step="1" title="Pivot Y">
+                  <div class="input-suffix">PY</div>
+                </div>
+              </div>
+            </div>
+          </div></div>
+        </div>
+
+        <!-- Module 04: Sections -->
+        <div class="module open" data-module>
+          <button class="module-head" type="button" aria-expanded="true">
+            <span class="module-index">04</span>
+            <span class="module-title">Section Stack<small>Groups, sub-sections, position keyframes</small></span>
+            <span class="module-chevron" aria-hidden="true"></span>
+          </button>
+          <div class="module-body"><div class="module-inner">
+            <div class="control-group">
+              <label for="sectionCount">
+                Section Count
+                <span class="badge">1–10 GROUPS</span>
+              </label>
+              <div class="stepper-input">
+                <button class="stepper-btn" id="sectionMinus" type="button" aria-label="Decrease sections">−</button>
+                <input type="number" id="sectionCount" min="1" max="10" value="1">
+                <button class="stepper-btn" id="sectionPlus" type="button" aria-label="Increase sections">+</button>
+              </div>
+              <div class="control-hint">Split slices into independent groups with separate timing, direction, and slide motion.</div>
+            </div>
+
+            <div id="sectionsContainer"></div>
+
+            <div class="control-group" style="margin-bottom: 0;">
+              <button id="openGraphBtn" class="open-graph-btn primary" type="button">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                </svg>
+                Edit Global Easing Curve
+              </button>
+            </div>
+          </div></div>
+        </div>
+
+        <!-- Module 05: Wipe Controls -->
+        <div class="module open" data-module>
+          <button class="module-head" type="button" aria-expanded="true">
+            <span class="module-index">05</span>
+            <span class="module-title">Wipe Parameters<small>Origin, range, angle, feather</small></span>
+            <span class="module-chevron" aria-hidden="true"></span>
+          </button>
+          <div class="module-body"><div class="module-inner">
+            <div class="control-group">
+              <label>Wipe Origin <span class="badge">CENTERED</span></label>
+              <div class="readonly-row">
+                <div class="readonly-field">
+                  <span class="field-label">X</span>
+                  <span class="field-value" id="wipeXDisplay">540</span>
+                </div>
+                <div class="readonly-field">
+                  <span class="field-label">Y</span>
+                  <span class="field-value" id="wipeYDisplay">675</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <label>Normalized Span <span class="badge">0–100%</span></label>
+              <div class="readonly-row">
+                <div class="readonly-field">
+                  <span class="field-label">Start</span>
+                  <span class="field-value" id="wipeStartDisplay">0</span>
+                </div>
+                <div class="readonly-field">
+                  <span class="field-label">End</span>
+                  <span class="field-value" id="wipeEndDisplay">100</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <label for="wipeAngle">Wipe Angle</label>
+              <div class="range-row">
+                <input type="range" id="wipeAngle" min="0" max="360" value="0" step="1">
+                <span class="range-value" id="wipeAngleValue">0°</span>
+              </div>
+              <div class="pill-row" id="wipeAnglePresets" style="margin-top: 8px;">
+                <button type="button" class="preset-pill active" data-angle="0">0° Vert</button>
+                <button type="button" class="preset-pill" data-angle="45">45° Diag ↗</button>
+                <button type="button" class="preset-pill" data-angle="51.34">51.3° 4:5</button>
+                <button type="button" class="preset-pill" data-angle="90">90° Horiz</button>
+                <button type="button" class="preset-pill" data-angle="135">135° Diag ↘</button>
+              </div>
+            </div>
+
+            <div class="control-group" style="margin-bottom: 0;">
+              <label for="wipeSoftness">Edge Feather</label>
+              <div class="range-row">
+                <input type="range" id="wipeSoftness" min="0" max="100" value="0" step="1">
+                <span class="range-value" id="wipeSoftnessValue">0</span>
+              </div>
+            </div>
+          </div></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Center Column: Canvas Monitor & Transport -->
+    <section class="panel preview-panel" id="preview-panel">
+      <div class="panel-header preview-panel-header">
+        <h2>
+          <span class="ph-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+            </svg>
+          </span>
+          <span class="ph-text" id="studioMonitorTitle">Canvas Monitor<small id="studioMonitorSubtitle">Orthographic slice preview</small></span>
+        </h2>
+        <div class="studio-preview-header-right">
+          <!-- Switch between 2D Canvas and GLSL Preview -->
+          <div class="toggle-group studio-preview-switcher" id="studioPreviewSwitcher">
+            <button class="toggle-btn active" data-preview-mode="canvas" id="btnPreviewMode2D" type="button" title="Standard 2D Canvas Monitor">2D Canvas</button>
+            <button class="toggle-btn" data-preview-mode="glsl" id="btnPreviewModeGLSL" type="button" title="Native WebGL GLSL 3D Shader Preview">GLSL 3D</button>
+          </div>
+
+          <!-- Quick GLSL Tools (Visible only when GLSL 3D is active in Wipe Studio) -->
+          <div class="toggle-group studio-glsl-tools" id="studioGlslQuickTools" style="display: none;">
+            <button class="toggle-btn active" data-cam="front" id="studioGlslCamFrontBtn" type="button" title="Direct Front View (Exact Alight Motion output)">Front</button>
+            <button class="toggle-btn" data-cam="orbit" id="studioGlslCamOrbitBtn" type="button" title="3D Perspective Orbit (Inspect Z-Depth &amp; 3D Folds)">Orbit</button>
+            <button class="toggle-btn active" id="studioGlslRandColorsBtn" type="button" title="Toggle Random Colors for Slices">Colors</button>
+          </div>
+
+          <div class="preview-dimensions" id="previewDimensions">1080 × 1350</div>
+        </div>
+      </div>
+
+      <!-- Canvas Stage -->
+      <div class="canvas-container" id="canvasContainer">
+        <div class="stage-guides" aria-hidden="true">
+          <span class="crop-mark tl"></span>
+          <span class="crop-mark tr"></span>
+          <span class="crop-mark bl"></span>
+          <span class="crop-mark br"></span>
+        </div>
+        <canvas id="previewCanvas"></canvas>
+        <div class="crosshair-label" id="crosshairLabel">Center: 540, 675</div>
+      </div>
+
+      <!-- Playback Transport -->
+      <div class="playback-controls">
+        <button id="playBtn" type="button" title="Play or pause preview (Space)">
+          <svg id="playIcon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+        </button>
+        <div class="scrubber-wrap">
+          <input type="range" id="playbackScrubber" min="0" max="1" step="0.001" value="0" aria-label="Timeline scrubber">
+        </div>
+        <span id="playbackTimeDisplay">0.00s</span>
+      </div>
+
+      <!-- Collapsible Math & Slice Breakdown -->
+      <div class="formulas-card" id="formulasCard">
+        <button class="formulas-toggle-head" id="formulasToggleBtn" type="button" aria-expanded="true">
+          <span class="ft-left">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/>
+            </svg>
+            <span>Slice Math &amp; Coordinates</span>
+          </span>
+          <span class="module-chevron" aria-hidden="true"></span>
+        </button>
+        <div class="formula-content" id="formulaContent"></div>
+      </div>
+    </section>
+
+    <!-- Right Column: Layer Stack & XML Export -->
+    <section class="panel data-panel" id="data-panel">
+      <div class="panel-header">
+        <h2>
+          <span class="ph-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>
+            </svg>
+          </span>
+          <span class="ph-text">Layer Stack &amp; Export<small>Computed transforms and XML</small></span>
+        </h2>
+      </div>
+
+      <div class="table-container" id="tableContainer">
+        <table id="layerTable">
+          <thead>
+            <tr>
+              <th>Cut</th>
+              <th>Loc X</th>
+              <th>Loc Y</th>
+              <th id="thCol4">Size (W×H)</th>
+              <th id="thCol5">Scale X</th>
+              <th id="thCol6">Scale Y</th>
+            </tr>
+          </thead>
+          <tbody id="layerTableBody"></tbody>
+        </table>
+      </div>
+
+      <div class="xml-section">
+        <div class="xml-header">
+          <h3>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+            </svg>
+            Alight Motion XML
+          </h3>
+          <div class="xml-actions">
+            <button class="icon-btn" id="copySettingsBtn" type="button" title="Copy preset string">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+              </svg>
+            </button>
+            <button class="icon-btn" id="importSettingsBtn" type="button" title="Load preset string">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="12" y1="18" x2="12" y2="12"></line>
+                <line x1="9" y1="15" x2="15" y2="15"></line>
+              </svg>
+            </button>
+            <div class="xml-actions-divider"></div>
+            <button class="icon-btn" id="toggleXmlBtn" type="button" title="Show or hide XML source">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
+            <button class="icon-btn" id="copyXmlBtn" type="button" title="Copy XML to clipboard">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+            </button>
+            <button class="icon-btn primary-icon-btn" id="downloadXmlBtn" type="button" title="Download XML file">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Mobile Export Card -->
+        <div class="mobile-xml-hero" id="mobileXmlHero">
+          <button class="mobile-hero-dl-btn" id="mobileHeroDlBtn" type="button" aria-label="Download Alight Motion XML">
+            <div class="m-btn-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+            </div>
+            <div class="m-btn-text">
+              <span class="m-btn-title">Download Alight Motion XML</span>
+              <span class="m-btn-sub" id="mobileHeroSpecs">5 Layers · 1080 × 1350 · Ready</span>
+            </div>
+          </button>
+          <div class="mobile-quick-actions">
+            <button class="m-action-pill" id="mobileCopyXmlBtn" type="button">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+              <span>Copy XML</span>
+            </button>
+            <button class="m-action-pill" id="mobileToggleXmlBtn" type="button">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+              <span>Inspect Code</span>
+            </button>
+          </div>
+          <div class="mobile-quick-actions">
+            <button class="m-action-pill" id="mobileCopySettingsBtn" type="button">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+              </svg>
+              <span>Copy Preset</span>
+            </button>
+            <button class="m-action-pill" id="mobileImportSettingsBtn" type="button">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="12" y1="18" x2="12" y2="12"/>
+                <line x1="9" y1="15" x2="15" y2="15"/>
+              </svg>
+              <span>Load Preset</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="xml-code-container" id="xmlCodeContainer" style="display: none;">
+          <pre id="xmlCode"></pre>
+        </div>
+        <div class="xml-standby" id="xmlStandbyBanner">
+          <span class="standby-dot" aria-hidden="true"></span>
+          <div class="standby-text">
+            <strong>XML ready to export</strong>
+            <span>Click the eye icon to inspect source or download directly.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Workspace 2: XML Media Layer Converter -->
+    <section class="panel converter-panel" id="converter-panel" style="display: none; grid-column: 1 / -1;">
+      <div class="panel-header">
+        <h2>
+          <span class="ph-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+          </span>
+          <span class="ph-text">Media Layer Converter<small>Convert color shapes into replaceable Alight Motion media slots</small></span>
+        </h2>
+        <div class="converter-header-actions">
+          <button class="ph-btn" id="btnCopyConvertedXml" type="button" title="Copy transformed XML">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+            Copy XML
+          </button>
+          <button class="ph-btn primary" id="btnDownloadConvertedXml" type="button" title="Download transformed XML">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Download XML
+          </button>
+        </div>
+      </div>
+
+      <div class="converter-layout">
+        <!-- Column 1: Import & Media Settings -->
+        <div class="converter-col import-col">
+          <div class="converter-card">
+            <div class="card-title">
+              <span class="step-index-tag">01</span>
+              Import XML File
+            </div>
+
+            <div class="xml-dropzone" id="xmlDropzone">
+              <input type="file" id="xmlFileInput" accept=".xml,text/xml,application/xml" style="display: none;">
+              <div class="dropzone-icon">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="12" y1="18" x2="12" y2="12"/>
+                  <polyline points="9 15 12 12 15 15"/>
+                </svg>
+              </div>
+              <div class="dropzone-text">
+                <strong>Drop an Alight Motion XML file</strong>
+                <span>or choose a file or paste raw XML text</span>
+              </div>
+              <div class="dropzone-actions">
+                <button class="btn-sub primary" id="btnBrowseXml" type="button">Choose File</button>
+                <button class="btn-sub" id="btnPasteXmlModal" type="button">Paste Text</button>
+              </div>
+            </div>
+
+            <div class="sample-pills">
+              <span class="sample-label">Samples:</span>
+              <button class="sample-pill-btn" id="btnLoadSample349" type="button">Project 349 (Wipe)</button>
+              <button class="sample-pill-btn" id="btnLoadSample294" type="button">Project 294 (Mask)</button>
+              <button class="sample-pill-btn" id="btnLoadStudioXml" type="button">Current Studio XML</button>
+            </div>
+
+            <div class="file-meta-banner" id="fileMetaBanner" style="display: none;">
+              <div class="fmeta-row">
+                <span class="fmeta-name" id="metaFileName">Project Name 349.xml</span>
+                <span class="badge" id="metaFileShapesCount">10 Shapes</span>
+              </div>
+              <div class="fmeta-specs">
+                <span id="metaDimensions">1080 × 1350</span> ·
+                <span id="metaFps">60 FPS</span> ·
+                <span id="metaDuration">13.05s</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="converter-card">
+            <div class="card-title">
+              <span class="step-index-tag">02</span>
+              Media Slot Options
+            </div>
+
+            <div class="control-group">
+              <label>Asset Format</label>
+              <div class="toggle-group" id="mediaTypeToggle">
+                <button class="toggle-btn active" data-value="image/png" type="button">Image (PNG)</button>
+                <button class="toggle-btn" data-value="video/mp4" type="button">Video (MP4)</button>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <label for="targetMediaUri">Placeholder Asset URI</label>
+              <div class="input-group">
+                <input type="text" id="targetMediaUri" value="am-internal:///79E80CB55B8662B05AFDC24DB42B814BC455410A.PNG" placeholder="am-internal:///..." spellcheck="false">
+              </div>
+              <div class="control-hint">Triggers Alight Motion's Replace Media prompt when you import the project.</div>
+            </div>
+
+            <div class="control-group" id="maskSlicingControlGroup">
+              <label>
+                Mask Tile Alignment
+                <span class="badge" id="maskSlicingBadge">CONNECTED</span>
+              </label>
+              <div class="toggle-group" id="maskSlicingToggle">
+                <button class="toggle-btn active" data-value="connect" type="button">Connect Across Tiles</button>
+                <button class="toggle-btn" data-value="individual" type="button">Repeat Per Shape</button>
+              </div>
+              <div class="control-hint">Spans one image across all mask tiles using Group &amp; Mask coordinates.</div>
+            </div>
+
+            <div class="control-group" style="margin-bottom: 0;">
+              <label>Batch Selection</label>
+              <div class="batch-buttons-grid">
+                <button class="btn-sub" id="btnSelectAllLayers" type="button">Select All</button>
+                <button class="btn-sub" id="btnDeselectAllLayers" type="button">Clear All</button>
+                <button class="btn-sub" id="btnInvertSelection" type="button">Invert</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Column 2: Layer Checklist -->
+        <div class="converter-col layers-col">
+          <div class="converter-card full-height">
+            <div class="card-title flex-between">
+              <div>
+                <span class="step-index-tag">03</span>
+                Shapes in Scene
+              </div>
+              <div class="layers-counter" id="layersCounterBadge">
+                <span class="count-highlight" id="selectedCountText">0</span> / <span id="totalCountText">0</span> media
+              </div>
+            </div>
+
+            <div class="layer-filter-bar">
+              <div class="search-input-group">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input type="text" id="layerSearchInput" placeholder="Filter by label, ID, or effect...">
+              </div>
+            </div>
+
+            <div class="layers-empty-state" id="layersEmptyState">
+              <h3>No XML loaded</h3>
+              <p>Choose an XML file, paste XML text, or load one of the sample projects to list its shapes.</p>
+            </div>
+
+            <div class="converter-layers-list" id="converterLayersList" style="display: none;"></div>
+          </div>
+        </div>
+
+        <!-- Column 3: Transformed Output -->
+        <div class="converter-col output-col">
+          <div class="converter-card full-height">
+            <div class="card-title flex-between">
+              <div>
+                <span class="step-index-tag">04</span>
+                Converted XML
+              </div>
+              <div class="xml-actions-inline">
+                <button class="btn-sub icon-only" id="btnCopyInlineXml" type="button" title="Copy XML">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="converter-xml-preview" id="converterXmlPreview">
+              <pre><code id="convertedXmlCode">&lt;!-- Load an XML file to inspect converted output --&gt;</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Workspace: Real Preview (Native GLSL / WebGL 3D Engine) -->
+    <section class="panel realpreview-panel" id="realpreview-panel" style="display: none; grid-column: 1 / -1;">
+      <div class="panel-header">
+        <h2>
+          <span class="ph-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+              <polyline points="2 17 12 22 22 17"/>
+              <polyline points="2 12 12 17 22 12"/>
+            </svg>
+          </span>
+          <span class="ph-text">Real Preview<small>Native WebGL GLSL Shader Engine · True 3D Flip Layer Motion</small></span>
+        </h2>
+        <div class="realpreview-header-actions">
+          <div class="pill-group" id="rpCameraModeGroup">
+            <button class="ph-btn active" data-cam="front" id="rpCamFrontBtn" type="button" title="Direct Front View (Exact Alight Motion output)">Front View</button>
+            <button class="ph-btn" data-cam="orbit" id="rpCamOrbitBtn" type="button" title="3D Perspective Orbit (Inspect Z-Depth &amp; 3D Folds)">3D Orbit</button>
+          </div>
+          <div class="rp-color-ctrls-group">
+            <label class="rp-color-label" title="Change Background Color of Preview Stage">
+              <span>BG</span>
+              <input type="color" id="rpBgColorPicker" value="#0a0a0e">
+            </label>
+            <label class="rp-color-label" title="Change Base Layer Color (when Random Colors is OFF)">
+              <span>Layer</span>
+              <input type="color" id="rpLayerColorPicker" value="#e05a3a">
+            </label>
+            <button class="ph-btn active" id="rpToggleRandomColorsBtn" type="button" title="Optional: Randomize colors for each flip layer slice so they are clearly distinguishable">Random Colors: ON</button>
+            <button class="ph-btn icon-only" id="rpShuffleColorsBtn" type="button" title="Shuffle Slice Palette">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/>
+              </svg>
+            </button>
+          </div>
+          <button class="ph-btn" id="rpToggleLightingBtn" type="button" title="Toggle 3D lighting &amp; backface shading">Lighting: ON</button>
+          <button class="ph-btn" id="rpToggleShaderCodeBtn" type="button" title="Toggle Live GLSL Shader Code &amp; Uniforms">View GLSL Code</button>
+        </div>
+      </div>
+
+      <div class="realpreview-layout" id="realpreviewLayout">
+        <!-- Main GLSL Canvas Stage -->
+        <div class="realpreview-stage-card" id="realpreviewStageCard">
+          <div class="glsl-stage-wrap" id="glslStageWrap">
+            <canvas id="glslRealCanvas"></canvas>
+            <!-- Real-time 3D Telemetry HUD Overlay -->
+            <div class="glsl-hud-overlay">
+              <div class="glsl-hud-row">
+                <span class="glsl-badge">WebGL GLSL</span>
+                <span class="glsl-hud-metric" id="rpHudFps">60 FPS</span>
+                <span class="glsl-hud-metric" id="rpHudLayers">5 Slices</span>
+              </div>
+              <div class="glsl-hud-row bottom">
+                <span class="glsl-hud-param" id="rpHudAxis">Axis: 45.0°</span>
+                <span class="glsl-hud-param" id="rpHudAngle">Angle: 0.0°</span>
+                <span class="glsl-hud-param" id="rpHudWipe">Wipe: 0% → 100%</span>
+              </div>
+            </div>
+            <!-- Orbit Drag Helper Hint -->
+            <div class="orbit-hint" id="rpOrbitHint" style="display: none;">
+              <span>Drag canvas to Orbit 3D Camera · Scroll to Zoom</span>
+            </div>
+          </div>
+
+          <!-- Playback Transport -->
+          <div class="realpreview-transport">
+            <button class="rp-btn" id="rpPlayBtn" type="button" title="Play or pause (Space)">
+              <svg id="rpPlayIcon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
+            </button>
+            <button class="rp-btn icon-only" id="rpStepBackBtn" type="button" title="Step back 1 frame">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="19 20 9 12 19 4"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
+            </button>
+            <button class="rp-btn icon-only" id="rpStepFwdBtn" type="button" title="Step forward 1 frame">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="5 4 15 12 5 20"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+            </button>
+            <div class="scrubber-wrap">
+              <input type="range" id="rpScrubber" min="0" max="1" step="0.001" value="0" aria-label="Timeline scrubber">
+            </div>
+            <span class="rp-time" id="rpTimeDisplay">0.00s</span>
+            <div class="pill-group rp-speed-group">
+              <button class="rp-pill active" data-speed="1.0" type="button">1x</button>
+              <button class="rp-pill" data-speed="0.5" type="button">0.5x</button>
+              <button class="rp-pill" data-speed="0.25" type="button">0.25x</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live GLSL Shader Code & Uniforms Drawer -->
+        <div class="realpreview-inspector-card" id="rpInspectorCard">
+          <div class="rp-drawer-tabs">
+            <button class="rp-dtab active" data-view="vert" id="rpTabVertBtn" type="button">Vertex Shader (3D Flip)</button>
+            <button class="rp-dtab" data-view="frag" id="rpTabFragBtn" type="button">Fragment Shader (Wipe2)</button>
+            <button class="rp-dtab" data-view="uniforms" id="rpTabUniformsBtn" type="button">Live Uniforms</button>
+          </div>
+
+          <div class="rp-drawer-view" id="rpViewVert">
+            <div class="code-banner">Active Rodrigues 3D Axis Rotation Matrix (Vertex Shader)</div>
+            <pre class="glsl-code-block"><code id="rpVertCode"></code></pre>
+          </div>
+
+          <div class="rp-drawer-view" id="rpViewFrag" style="display: none;">
+            <div class="code-banner">Active Isotropic Wipe2 Diagonal Cutout &amp; Feathering (Fragment Shader)</div>
+            <pre class="glsl-code-block"><code id="rpFragCode"></code></pre>
+          </div>
+
+          <div class="rp-drawer-view" id="rpViewUniforms" style="display: none;">
+            <div class="code-banner">Real-Time GPU Uniform Registry (Updating live)</div>
+            <div class="uniforms-table-wrap">
+              <table class="uniforms-table">
+                <thead>
+                  <tr><th>Uniform</th><th>Type</th><th>Current Value</th></tr>
+                </thead>
+                <tbody id="rpUniformsTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Workspace: YT Converter (1080p / 4K 60FPS Stream Muxer & Legal Compliance Gate) -->
+    <section class="panel ytconverter-panel" id="ytconverter-panel" style="display: none; grid-column: 1 / -1;">
+      <div class="panel-header">
+        <h2>
+          <span class="ph-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/>
+              <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/>
+            </svg>
+          </span>
+          <span class="ph-text">YT Converter<small>High-Bitrate 1080p / 4K 60fps Video Importer · Codec &amp; Bitrate Selector · Paid / Rental Stream Gate</small></span>
+        </h2>
+        <div class="xmlglsl-header-actions">
+          <span class="ph-btn" id="ytcStreamSpecBadge" style="font-family: var(--font-mono); font-size: 11px; pointer-events: none;">2160P60 · H264 / AAC · .MP4</span>
+        </div>
+      </div>
+
+      <div class="ytc-layout">
+        <!-- Column 1: Link Import, Stream Preview & Quick Test Presets -->
+        <div class="ytc-card">
+          <div class="xmlglsl-card-title">
+            <span>01 · YouTube Link Import &amp; Stream Verification</span>
+            <span class="tag">Source</span>
+          </div>
+
+          <div class="ytc-url-bar">
+            <input type="text" class="ytc-url-input" id="ytcUrlInput" placeholder="Paste YouTube, Shorts, or TikTok URL (No Watermark HD)...">
+            <button class="ph-btn ph-btn-primary" id="ytcAnalyzeBtn" type="button" style="white-space: nowrap; padding: 0 14px;">Analyze Link</button>
+          </div>
+
+          <!-- Quick Test Presets (All YouTube & TikTok No-Watermark Streams Supported) -->
+          <div class="xg-prop-group">
+            <div class="xg-prop-group-title">
+              <span>Stream Quick Presets</span>
+              <span style="font-size: 10px; color: var(--text-3);">Instant Sample Check</span>
+            </div>
+            <div class="xg-quick-pills">
+              <button type="button" class="xg-quick-pill ytc-test-preset" data-url="https://www.youtube.com/watch?v=aqz-KE-bpKQ" data-title="Big Buck Bunny 60fps 4K - Blender Open Movie" data-author="Blender Foundation">✓ Open 4K60 Sample</button>
+              <button type="button" class="xg-quick-pill ytc-test-preset" data-url="https://www.youtube.com/watch?v=jNQXAC9IVRw" data-title="Gojo vs Sukuna 4K 60FPS Anime Twixtor Scenepack" data-author="Twixtor Vault">✓ Anime Twixtor 4K60</button>
+              <button type="button" class="xg-quick-pill ytc-test-preset" data-url="https://www.tiktok.com/@tiktok/video/7106594312292453675" data-title="TikTok HD Video (No Owner Watermark)" data-author="@tiktok">✓ TikTok HD (No Watermark)</button>
+              <button type="button" class="xg-quick-pill ytc-test-preset" data-url="https://www.youtube.com/watch?v=paid_movie1" data-title="Spider-Man: Across the Spider-Verse [Buy or Rent]" data-author="YouTube Movies &amp; TV">✓ Movie / Store Video (Unlocked)</button>
+            </div>
+          </div>
+
+          <!-- Stream Metadata Preview Card -->
+          <div class="ytc-video-preview empty" id="ytcVideoPreviewCard">
+            <div class="ytc-thumb-wrap">
+              <img id="ytcThumbImg" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='79' viewBox='0 0 140 79'%3E%3Crect width='140' height='79' fill='%230d0d0f'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23555' font-family='monospace' font-size='10'%3ENO STREAM%3C/text%3E%3C/svg%3E" alt="Stream thumbnail">
+            </div>
+            <div class="ytc-video-meta">
+              <div class="ytc-video-title" id="ytcVideoTitle">No YouTube stream loaded</div>
+              <div class="ytc-channel-name" id="ytcChannelName">Channel: —</div>
+            </div>
+          </div>
+
+          <!-- Live Stream Status Readout -->
+          <div class="ytc-compliance-box">
+            <span class="ytc-compliance-badge idle" id="ytcComplianceBadge">AWAITING LINK</span>
+            <div class="ytc-compliance-reason" id="ytcComplianceReason">Paste any YouTube link (paid, rentals, movies, anime twixtors &amp; clips supported).</div>
+            <div class="ytc-compliance-rule" id="ytcComplianceRule">POLICY: ALL YOUTUBE VIDEOS UNRESTRICTED · EXPORT READY</div>
+          </div>
+        </div>
+
+        <!-- Column 2: Device Presets (iPhone Photos / Mobile / 4K60), Codec & Direct MP4 Output -->
+        <div class="ytc-card">
+          <div class="xmlglsl-card-title">
+            <span>02 · Device Preset, Resolution &amp; Codec</span>
+            <span class="tag" id="ytcActivePresetTag">Direct .MP4</span>
+          </div>
+
+          <!-- Mobile / iPhone Photos & NLE Device Presets -->
+          <div class="xg-prop-group">
+            <div class="xg-prop-group-title">
+              <span>Target Device Preset</span>
+              <span style="font-size: 10px; color: var(--cyan);" id="ytcDetectedDeviceLabel">Auto-Optimized</span>
+            </div>
+            <div class="ytc-preset-grid" id="ytcPresetGroup">
+              <button type="button" class="ytc-preset-btn" data-preset="iphone_photos">
+                <span class="ytc-preset-title">📱 iPhone Photos</span>
+                <span class="ytc-preset-sub">1080p H.264+AAC · Camera Roll</span>
+              </button>
+              <button type="button" class="ytc-preset-btn" data-preset="android_gallery">
+                <span class="ytc-preset-title">🤖 Android MP4</span>
+                <span class="ytc-preset-sub">1080p60 MP4 · Gallery Direct</span>
+              </button>
+              <button type="button" class="ytc-preset-btn active" data-preset="desktop_4k">
+                <span class="ytc-preset-title">🖥️ Desktop 4K60</span>
+                <span class="ytc-preset-sub">2160p60 Ultra HD · .MP4</span>
+              </button>
+              <button type="button" class="ytc-preset-btn" data-preset="nle_edit">
+                <span class="ytc-preset-title">🎬 Alight Motion</span>
+                <span class="ytc-preset-sub">1080p60 AVC1 · Zero-Lag Edit</span>
+              </button>
+            </div>
+            <div class="ytc-ios-hint ok" id="ytcIosCompatHint">
+              ✓ Direct .MP4 video output enabled (H.264 + AAC · Apple Photos &amp; Mobile Ready)
+            </div>
+          </div>
+
+          <div class="xg-prop-group">
+            <div class="xg-prop-group-title">
+              <span>Stream Quality &amp; Encoding</span>
+            </div>
+
+            <div class="xg-prop-row">
+              <span class="xg-prop-label">Resolution / FPS</span>
+              <select id="ytcResolutionSelect" class="ph-btn" style="flex: 1; max-width: 240px; font-size: 11px; padding: 6px;">
+                <option value="2160p60" selected>2160p (4K Ultra HD) · 60 FPS</option>
+                <option value="2160p30">2160p (4K Ultra HD) · 30 FPS</option>
+                <option value="1440p60">1440p (2K QHD) · 60 FPS</option>
+                <option value="1080p60">1080p (Full HD) · 60 FPS</option>
+                <option value="1080p30">1080p (Full HD) · 30 FPS</option>
+                <option value="720p60">720p (HD) · 60 FPS</option>
+                <option value="480p">480p (Standard) · 30 FPS</option>
+                <option value="audio">Audio Only (.M4A / .MP3)</option>
+              </select>
+            </div>
+
+            <div class="xg-prop-row">
+              <span class="xg-prop-label">Video Codec</span>
+              <select id="ytcVideoCodecSelect" class="ph-btn" style="flex: 1; max-width: 240px; font-size: 11px; padding: 6px;">
+                <option value="h264" selected>H.264 / AVC1 (iPhone Photos &amp; Alight Motion)</option>
+                <option value="hevc">H.265 / HEVC (Apple hvc1 / 10-bit)</option>
+                <option value="av1">AV1 (Desktop 4K60 High Efficiency)</option>
+                <option value="vp9">VP9 (Desktop WebM HDR)</option>
+                <option value="prores">Apple ProRes 422 (.MOV Edit Master)</option>
+              </select>
+            </div>
+
+            <div class="xg-prop-row">
+              <span class="xg-prop-label">Audio Codec</span>
+              <select id="ytcAudioCodecSelect" class="ph-btn" style="flex: 1; max-width: 240px; font-size: 11px; padding: 6px;">
+                <option value="aac" selected>AAC-LC (256 kbps · iOS Photos &amp; MP4 Native)</option>
+                <option value="mp3">MP3 (320 kbps CBR)</option>
+                <option value="opus">Opus (160 kbps · WebM/MKV)</option>
+                <option value="flac">FLAC (24-bit Lossless)</option>
+                <option value="wav">PCM WAV (Uncompressed 48kHz)</option>
+              </select>
+            </div>
+
+            <div class="xg-prop-row">
+              <span class="xg-prop-label">Container</span>
+              <select id="ytcContainerSelect" class="ph-btn" style="flex: 1; max-width: 240px; font-size: 11px; padding: 6px;">
+                <option value="mp4" selected>.MP4 (Universal Video · iPhone &amp; Desktop)</option>
+                <option value="mov">.MOV (Apple QuickTime / iOS Photos)</option>
+                <option value="mkv">.MKV (Desktop Matroska)</option>
+                <option value="webm">.WEBM (Desktop VP9 / AV1)</option>
+                <option value="m4a">.M4A (Apple Audio Only)</option>
+                <option value="mp3">.MP3 (Audio Only)</option>
+                <option value="wav">.WAV (Lossless Audio)</option>
+              </select>
+            </div>
+
+            <!-- Bitrate Slider -->
+            <div class="ytc-bitrate-block">
+              <div class="xg-prop-row">
+                <span class="xg-prop-label">Video Bitrate</span>
+                <span class="ytc-bitrate-readout" id="ytcVideoBitrateValue">Auto</span>
+              </div>
+              <input type="range" id="ytcVideoBitrateSlider" class="ytc-bitrate-slider" min="0" max="60" step="0.5" value="0" aria-label="Video bitrate in Mbps (0 = Auto)">
+              <div class="xg-prop-row">
+                <span class="xg-prop-label">Audio Bitrate</span>
+                <span class="ytc-bitrate-readout" id="ytcAudioBitrateValue">Auto</span>
+              </div>
+              <input type="range" id="ytcAudioBitrateSlider" class="ytc-bitrate-slider" min="0" max="320" step="32" value="0" aria-label="Audio bitrate in kbps (0 = Auto)">
+              <div class="ytc-bitrate-hint" id="ytcBitrateHint">Auto = source quality. Est. size: —</div>
+            </div>
+          </div>
+
+          <!-- Optional Sub-Clip Range -->
+          <div class="xg-prop-group">
+            <div class="xg-prop-row">
+              <span class="xg-prop-label">Trim Clip Section (Keyframe-Exact)</span>
+              <label class="xg-switch-mini">
+                <input type="checkbox" id="ytcTrimToggle">
+                <span class="xg-switch-slider"></span>
+              </label>
+            </div>
+            <div class="xg-prop-row" id="ytcTrimRow" style="display: none; margin-top: 6px;">
+              <span class="xg-prop-label">Start / End</span>
+              <div class="xg-dual-ctrl">
+                <input type="text" id="ytcTrimStart" value="00:00:00" style="width: 85px; font-family: var(--font-mono); font-size: 11px; padding: 4px; background: var(--bg-panel); border: 1px solid var(--line-mid); color: var(--text-1); border-radius: 4px; text-align: center;">
+                <span style="color: var(--text-3);">→</span>
+                <input type="text" id="ytcTrimEnd" value="00:00:30" style="width: 85px; font-family: var(--font-mono); font-size: 11px; padding: 4px; background: var(--bg-panel); border: 1px solid var(--line-mid); color: var(--text-1); border-radius: 4px; text-align: center;">
+              </div>
+            </div>
+          </div>
+
+          <!-- Real MP4 Download Action -->
+          <div class="xg-prop-group">
+            <button class="ph-btn ph-btn-primary ytc-main-dl-btn" id="ytcDownloadBtn" type="button" disabled>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span id="ytcDownloadBtnLabel">Download .MP4 Video</span>
+            </button>
+
+            <div class="ytc-progress-wrap" id="ytcProgressWrap">
+              <div class="ytc-progress-bar">
+                <div class="ytc-progress-fill" id="ytcProgressBarFill"></div>
+              </div>
+              <div style="font-family: var(--font-mono); font-size: 10px; color: var(--text-2);" id="ytcProgressStatus">Initializing MP4 muxer...</div>
+            </div>
+
+            <!-- Ready MP4 Preview + One-Tap Save to iPhone Photos (Web Share API Level 2) -->
+            <div class="ytc-ready-media-box" id="ytcReadyMediaBox" style="display: none;">
+              <div class="ytc-ready-header">
+                <span class="ytc-ready-badge">MP4 READY</span>
+                <span class="ytc-ready-filename" id="ytcReadyFilename">video.mp4</span>
+              </div>
+              <video id="ytcPreviewPlayer" class="ytc-preview-player" controls playsinline preload="metadata"></video>
+              <div class="ytc-ready-actions">
+                <button type="button" class="ytc-save-photos-btn" id="ytcSaveToPhotosBtn">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                  <span id="ytcSaveToPhotosLabel">Save Video to iPhone Photos</span>
+                </button>
+                <a class="ph-btn ytc-direct-file-btn" id="ytcDirectMp4Link" href="#" download="video.mp4">
+                  ⬇ Save .MP4 File
+                </a>
+              </div>
+              <div class="ytc-photos-guide" id="ytcPhotosStepGuide">
+                <strong>iPhone / iPad Tip:</strong> Tap <em>Save Video to iPhone Photos</em> → select <strong>Save Video</strong> in the iOS share sheet to save directly into your Camera Roll.
+              </div>
+            </div>
+          </div>
+
+          <!-- Collapsible Advanced CLI Reference (Never forces .bat download) -->
+          <details class="ytc-cli-details">
+            <summary>Advanced: Optional CLI Command Reference (yt-dlp)</summary>
+            <div class="xg-prop-group" style="margin-top: 8px;">
+              <div class="xg-prop-group-title">
+                <span>Local FFmpeg / yt-dlp String</span>
+                <button class="xg-btn-icon" id="ytcCopyCliBtn" type="button">Copy Command</button>
+              </div>
+              <div class="ytc-cli-box" id="ytcCliCode">yt-dlp -f "bestvideo[height<=2160][fps<=60][vcodec^=avc1]+bestaudio[acodec^=mp4a]" --merge-output-format mp4</div>
+            </div>
+          </details>
+        </div>
+
+        <!-- Column 3: Stream Queue & Preset Manager -->
+        <div class="ytc-card">
+          <div class="xmlglsl-card-title">
+            <span>03 · Conversion Stream Queue</span>
+            <span class="tag">Active Queue</span>
+          </div>
+
+          <div class="xg-prop-group">
+            <div class="xg-prop-group-title">
+              <span>Universal Stream Importer</span>
+            </div>
+            <div style="font-size: 11px; color: var(--text-2); line-height: 1.4;">
+              All YouTube media — paid, rentals, movies, anime twixtors, scenepacks, and edits — export directly to .MP4 with 0 popups and 0 redirects.
+            </div>
+            <div class="ytc-blocked-tags" id="ytcBlockedChannelsTags" style="display: none;"></div>
+          </div>
+
+          <div class="xg-prop-group" style="flex: 1;">
+            <div class="xg-prop-group-title">
+              <span>Session Conversion Queue</span>
+            </div>
+            <div class="ytc-history-list" id="ytcHistoryList"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel hollowbox-panel" id="hollowboxPanel" style="display: none; grid-column: 1 / -1;">
+      <div class="hollowbox-layout">
+
+        <!-- Column 1: Hierarchy, Beats & Media -->
+        <div class="hb-col config-col">
+          <div class="hb-card">
+            <div class="card-title flex-between">
+              <div>
+                <span class="step-index-tag">01</span>
+                Scene Hierarchy
+              </div>
+              <button class="preset-pill active" id="btnHbReset304" type="button" title="Restore Project 304 defaults">Reset 304</button>
+            </div>
+
+            <div class="control-group">
+              <label>Box Structure</label>
+              <div class="toggle-group" id="hbStructureToggle">
+                <button class="toggle-btn active" data-value="nested" type="button">Nested (Box in Box)</button>
+                <button class="toggle-btn" data-value="settingsOnly" type="button">Inner Only</button>
+                <button class="toggle-btn" data-value="originalOnly" type="button">Outer Only</button>
+              </div>
+              <div class="control-hint">Project 304 layout: Outer Original HB shell plus inner Settings box at (0, 100, -25), scale 0.50.</div>
+            </div>
+
+            <div class="control-group">
+              <label>Animated Target</label>
+              <div class="toggle-group" id="hbTargetToggle">
+                <button class="toggle-btn active" data-value="settings" type="button">Inner (Settings)</button>
+                <button class="toggle-btn" data-value="original" type="button">Outer (Original)</button>
+                <button class="toggle-btn" data-value="both" type="button">Both</button>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <label>
+                Step Count
+                <span class="badge" id="hbStepBadge">4 STEPS (4 BEATS)</span>
+              </label>
+              <div class="toggle-group" id="hbStepCountToggle">
+                <button class="toggle-btn" data-value="2" type="button">2 Steps</button>
+                <button class="toggle-btn active" data-value="4" type="button">4 Steps</button>
+              </div>
+              <div class="control-hint">Aligns keyframes to beat bookmarks. Span two beats to curve velocity across the middle beat.</div>
+            </div>
+
+            <div class="field-grid two-col-grid">
+              <div class="control-group" style="margin-bottom: 0;">
+                <label for="hbProjectDuration">Duration</label>
+                <input type="text" id="hbProjectDuration" value="00:02:00" class="styled-input">
+              </div>
+              <div class="control-group" style="margin-bottom: 0;">
+                <label>Canvas</label>
+                <div class="readonly-static-box">1080 × 1350 (4:5)</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hb-card">
+            <div class="card-title flex-between">
+              <div>
+                <span class="step-index-tag">02</span>
+                Beat Bookmarks
+              </div>
+              <span class="fmeta-specs">MM:SS:FF @ 60fps</span>
+            </div>
+
+            <div class="beats-list" id="hbBeatsList"></div>
+
+            <div class="quick-tempo-row">
+              <button class="sample-pill-btn" type="button" data-hb-bpm="120">120 BPM</button>
+              <button class="sample-pill-btn" type="button" data-hb-bpm="130">130 BPM</button>
+              <button class="sample-pill-btn" type="button" data-hb-bpm="140">140 BPM</button>
+              <button class="sample-pill-btn" type="button" data-hb-bpm="150">150 BPM</button>
+              <button class="sample-pill-btn" type="button" data-hb-bpm="304">304 Timing</button>
+            </div>
+          </div>
+
+          <div class="hb-card">
+            <div class="card-title">
+              <span class="step-index-tag">03</span>
+              Video Fill &amp; Stretch2
+            </div>
+            <div class="control-group">
+              <label for="hbMediaUri">Video Asset URI</label>
+              <input type="text" id="hbMediaUri" value="am-internal:///BBB32FC1DE51537203F258871E0D8039FC5960A0.MP4" class="styled-input mono-sm" spellcheck="false">
+            </div>
+            <div class="field-grid two-col-grid">
+              <div class="control-group" style="margin-bottom: 0;">
+                <label for="hbStretchAngle">Stretch Angle</label>
+                <input type="number" id="hbStretchAngle" value="90" class="styled-input">
+              </div>
+              <div class="control-group" style="margin-bottom: 0;">
+                <label for="hbStretchScale">Stretch Scale</label>
+                <input type="number" id="hbStretchScale" value="1.25" step="0.05" class="styled-input">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Column 2: Per-Step Variables & Easing -->
+        <div class="hb-col steps-col">
+          <div class="hb-card full-height">
+            <div class="card-title flex-between wrap-gap">
+              <div>
+                <span class="step-index-tag">04</span>
+                Step Keyframes
+              </div>
+              <div class="step-nav-pills" id="hbStepPills"></div>
+            </div>
+
+            <div class="hb-steps-container" id="hbStepsContainer"></div>
+          </div>
+        </div>
+
+        <!-- Column 3: 3D Wireframe Stage & XML Export -->
+        <div class="hb-col preview-col">
+          <div class="hb-card hb-viewport-card">
+            <div class="card-title flex-between">
+              <div>
+                <span class="step-index-tag">3D</span>
+                Wireframe Stage
+              </div>
+              <div class="badge" id="hbPreviewHudTag">STEP 1</div>
+            </div>
+
+            <div class="hb-canvas-wrap" id="hbCanvasWrap">
+              <canvas id="hbPreviewCanvas" width="480" height="340"></canvas>
+              <div class="hb-canvas-telemetry">
+                <span id="hbTelemPos">POS: 0, 100, -25</span>
+                <span id="hbTelemRot">ROT: 0°, 0°, 0°</span>
+                <span id="hbTelemDims">W:1.0 H:1.0 D:1.0</span>
+              </div>
+            </div>
+
+            <div class="hb-scrub-controls">
+              <button class="btn-sub icon-only" id="hbPlayBtn" type="button" title="Play or pause 3D preview">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+              </button>
+              <div class="hb-timeline-bar-wrap">
+                <input type="range" id="hbTimelineScrubber" min="0" max="2000" value="0" step="1" aria-label="Hollow Box timeline scrubber">
+                <div class="hb-beat-markers" id="hbBeatMarkers"></div>
+              </div>
+              <span class="timecode" id="hbPlayheadTimecode">0.00s</span>
+            </div>
+          </div>
+
+          <div class="hb-card full-height" style="flex: 1;">
+            <div class="card-title flex-between">
+              <div>
+                <span class="step-index-tag">XML</span>
+                Hollow Box Output
+              </div>
+              <div class="xml-actions-inline">
+                <button class="btn-sub" id="hbCopyXmlBtn" type="button" title="Copy Hollow Box XML">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                  </svg>
+                  Copy
+                </button>
+                <button class="btn-sub primary" id="hbDownloadXmlBtn" type="button" title="Download Hollow Box XML">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                  Download
+                </button>
+              </div>
+            </div>
+
+            <div class="converter-xml-preview" style="max-height: 360px;">
+              <pre><code id="hbXmlCodeBlock">&lt;!-- Hollow Box XML --&gt;</code></pre>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="panel editing-panel" id="editing-panel" style="display: none; grid-column: 1 / -1;">
+      <!-- Alight Motion Top Bar -->
+      <div class="am-top-bar">
+        <div class="am-top-left">
+          <button class="am-nav-btn" id="amBackBtn" type="button" title="Back">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
+          <div class="am-project-title-wrap" id="amProjectTitleWrap" title="Click to rename project">
+            <span class="am-project-title" id="amProjectTitleText">Project Name 7</span>
+            <span class="am-project-res-badge" id="amProjectResBadge">1080×1080 • 60fps</span>
+          </div>
+        </div>
+        <div class="am-top-right">
+          <button class="am-nav-btn" id="amSettingsBtn" type="button" title="Project Settings">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+          </button>
+          <button class="am-export-btn" id="amExportBtn" type="button" title="Export Alight Motion XML">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            <span>Export XML</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Body: Left Strip + Center Area + Right Drawer -->
+      <div class="am-main-body">
+        <!-- Left Strip -->
+        <div class="am-left-strip">
+          <button class="am-tool-btn" id="amAspectBtn" type="button" title="Aspect Ratio">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="9" y1="3" x2="9" y2="21"></line>
+            </svg>
+          </button>
+          <button class="am-tool-btn" id="amGridToggleBtn" type="button" title="Toggle Guidelines">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+              <line x1="3" y1="9" x2="21" y2="9"></line>
+              <line x1="3" y1="15" x2="21" y2="15"></line>
+              <line x1="9" y1="3" x2="9" y2="21"></line>
+              <line x1="15" y1="3" x2="15" y2="21"></line>
+            </svg>
+          </button>
+          <button class="am-tool-btn" id="amLayersOverlayBtn" type="button" title="Layers Mode">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+              <polyline points="2 17 12 22 22 17"></polyline>
+              <polyline points="2 12 12 17 22 12"></polyline>
+            </svg>
+          </button>
+          <button class="am-tool-btn" id="amCameraBtn" type="button" title="3D Camera">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+              <circle cx="12" cy="13" r="4"></circle>
+            </svg>
+          </button>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 4px 0;">
+            <button class="am-tool-btn" id="amZoomInBtn" style="height: 24px;" type="button" title="Zoom In">+</button>
+            <span class="am-zoom-badge" id="amZoomBadge">100%</span>
+            <button class="am-tool-btn" id="amZoomOutBtn" style="height: 24px;" type="button" title="Zoom Out">-</button>
+          </div>
+          <button class="am-tool-btn" id="amUndoBtn" type="button" title="Step Back 1 Frame">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 7v6h6"></path>
+              <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path>
+            </svg>
+          </button>
+          <button class="am-tool-btn" id="amRedoBtn" type="button" title="Step Forward 1 Frame">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 7v6h-6"></path>
+              <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"></path>
+            </svg>
+          </button>
+          <div class="am-strip-spacer"></div>
+          <button class="am-tool-btn am-play-icon" id="amLeftPlayBtn" type="button" title="Play">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Center Area: Canvas + Scrubber + Timeline -->
+        <div class="am-center-area">
+          <div class="am-canvas-stage">
+            <div class="am-canvas-viewport" id="amCanvasViewport" style="width: 480px; height: 480px;">
+              <canvas id="amGlCanvas" width="1080" height="1080"></canvas>
+              <!-- Interactive Transform Manipulator Overlay -->
+              <div class="am-canvas-manipulator" id="amCanvasManipulator" style="display: none;">
+                <div class="am-manip-bounds">
+                  <div class="am-manip-handle tl" data-handle="tl"></div>
+                  <div class="am-manip-handle tr" data-handle="tr"></div>
+                  <div class="am-manip-handle bl" data-handle="bl"></div>
+                  <div class="am-manip-handle br" data-handle="br"></div>
+                  <div class="am-manip-rot-line"></div>
+                  <div class="am-manip-rot-handle" data-handle="rot"></div>
+                  <div class="am-manip-center" data-handle="move"></div>
+                </div>
+              </div>
+              <div class="am-guide-line-h"></div>
+              <div class="am-guide-line-v"></div>
+              <div class="am-empty-canvas-prompt" id="amEmptyCanvasPrompt">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                  <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+                <p>No media layers added.<br>Import videos or images from the right drawer to start editing.</p>
+              </div>
+              <div class="am-gizmo-box" id="amGizmoBox">
+                <div class="am-gizmo-handle tl"></div>
+                <div class="am-gizmo-handle tr"></div>
+                <div class="am-gizmo-handle bl"></div>
+                <div class="am-gizmo-handle br"></div>
+                <div class="am-gizmo-handle rot"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Transport Scrubber Bar -->
+          <div class="am-transport-bar">
+            <div class="am-transport-left">
+              <span class="am-time-total" id="amTimeTotal">00:10:00</span>
+            </div>
+            <div class="am-transport-center">
+              <button class="am-transport-btn" id="amJumpPrevKfBtn" type="button" title="Previous Keyframe">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="19 20 9 12 19 4 19 20"></polygon>
+                  <line x1="5" y1="19" x2="5" y2="5"></line>
+                </svg>
+              </button>
+              <button class="am-transport-btn am-play-btn am-play-icon" id="amPlayBtn" type="button" title="Play / Pause">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+              </button>
+              <button class="am-transport-btn" id="amJumpNextKfBtn" type="button" title="Next Keyframe">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="5 4 15 12 5 20 5 4"></polygon>
+                  <line x1="19" y1="5" x2="19" y2="19"></line>
+                </svg>
+              </button>
+              <button class="am-transport-btn" id="amBookmarkBtn" type="button" title="Mark / Remove Beat Bookmark at Playhead">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                  <line x1="12" y1="8" x2="12" y2="14"></line>
+                  <line x1="9" y1="11" x2="15" y2="11"></line>
+                </svg>
+              </button>
+              <button class="am-keyframe-toggle-btn" id="amKeyframeToggleBtn" type="button" title="Add / Remove Keyframe at Playhead">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                  <polygon points="12 2 22 12 12 22 2 12 12 2"></polygon>
+                </svg>
+              </button>
+              <span class="am-time-badge" id="amTimeBadge">00:00:00</span>
+            </div>
+            <div class="am-transport-right">
+              <!-- Timeline Zoom Controls -->
+              <div class="am-zoom-controls">
+                <button class="am-transport-btn" id="amTimelineZoomOut" type="button" title="Zoom Out Timeline">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                </button>
+                <button class="am-transport-btn" id="amTimelineZoomIn" type="button" title="Zoom In Timeline">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                </button>
+              </div>
+
+              <!-- Quick Layer Actions -->
+              <button class="am-transport-btn" id="amCopyLayerBtn" type="button" title="Copy Selected Layer (Ctrl+C)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              </button>
+              <button class="am-transport-btn" id="amPasteLayerBtn" type="button" title="Paste Layer (Ctrl+V)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+              </button>
+              <button class="am-transport-btn" id="amDuplicateLayerBtn" type="button" title="Duplicate Layer">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+              </button>
+              <button class="am-transport-btn" id="amDeleteLayerBtn" type="button" title="Delete Layer">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              </button>
+              <button class="am-transport-btn" id="amSplitClipBtn" type="button" title="Split Clip at Playhead (S)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="6" cy="6" r="3"></circle>
+                  <circle cx="6" cy="18" r="3"></circle>
+                  <line x1="20" y1="4" x2="8.12" y2="15.88"></line>
+                  <line x1="14.47" y1="14.48" x2="20" y2="20"></line>
+                  <line x1="8.12" y1="8.12" x2="12" y2="12"></line>
+                </svg>
+              </button>
+              <button class="am-transport-btn" id="amGraphModalBtn" type="button" title="Easing Curve Graph Editor">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 3v18h18"></path>
+                  <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Multi-Track Timeline -->
+          <div class="am-timeline-container">
+            <div class="am-ruler-wrap" id="amRulerWrap">
+              <canvas class="am-ruler-canvas" id="amRulerCanvas"></canvas>
+            </div>
+            <div class="am-beat-lines-layer" id="amBeatLinesLayer"></div>
+            <div class="am-playhead-line" id="amPlayheadLine" title="Click to Mark/Unmark Beat"></div>
+            <div class="am-tracks-viewport" id="amTracksViewport"></div>
+          </div>
+        </div>
+
+        <!-- Right Alight Motion Drawer (Media / Documents Browser, Effects, Text) -->
+        <div class="am-right-drawer">
+          <div class="am-drawer-content">
+            <div class="am-drawer-header">
+              <div class="am-drawer-header-left">
+                <button class="am-nav-btn" id="amDrawerBackBtn" style="padding: 2px 4px; font-size: 14px;" type="button">&lt;</button>
+                <span class="am-drawer-title" id="amDrawerTitle">MEDIA</span>
+              </div>
+            </div>
+
+            <!-- TAB 1: SHAPES VIEW (Screenshot 1 Theme) -->
+            <div class="am-drawer-view" id="amDrawerShapeView" style="display: none; padding: 12px; overflow-y: auto;">
+              <div class="am-shapes-grid" id="amShapesGrid"></div>
+            </div>
+
+            <!-- TAB 2: MEDIA BROWSER VIEW (Videos & Images) -->
+            <div class="am-drawer-view am-media-browser-view" id="amDrawerMediaView" style="display: flex;">
+              <input type="file" id="amMediaFileInput" accept="video/*,image/*,.mp4,.webm,.mov,.mkv,.avi,.wmv,.flv,.png,.jpg,.jpeg,.webp,.gif,.bmp" multiple style="display: none;">
+              
+              <div class="am-media-dropzone" id="amMediaDropzone">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                <span>Drop video or image here</span>
+                <small>MP4, WebM, MOV, PNG, JPG, WebP</small>
+              </div>
+
+              <button class="am-import-media-btn" id="amTriggerImportBtn" type="button">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <span>Import Video / Image</span>
+              </button>
+
+              <div style="display: flex; gap: 6px; margin-top: 4px;">
+                <button class="am-cat-pill am-media-filter-pill active" data-filter="all" type="button">All</button>
+                <button class="am-cat-pill am-media-filter-pill" data-filter="video" type="button">Videos</button>
+                <button class="am-cat-pill am-media-filter-pill" data-filter="image" type="button">Images</button>
+              </div>
+
+              <div class="am-media-grid" id="amMediaGrid"></div>
+            </div>
+
+            <!-- TAB 3: AUDIO BROWSER & TIMING VIEW -->
+            <div class="am-drawer-view" id="amDrawerAudioView" style="display: none; padding: 12px; overflow-y: auto;">
+              <input type="file" id="amAudioFileInput" accept="audio/mp3,audio/wav,audio/m4a,audio/aac,audio/ogg,audio/flac,audio/*" multiple style="display: none;">
+              
+              <div class="am-media-dropzone" id="amAudioDropzone">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M9 18V5l12-2v13"></path>
+                  <circle cx="6" cy="18" r="3"></circle>
+                  <circle cx="18" cy="16" r="3"></circle>
+                </svg>
+                <span>Drop Audio Files (.mp3, .wav, .m4a)</span>
+                <small>Full Audio Waveform & Sync Compatibility</small>
+              </div>
+
+              <button class="am-import-media-btn" id="amTriggerAudioImportBtn" type="button">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <span>Import Audio File</span>
+              </button>
+
+              <div class="am-audio-list" id="amAudioList" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;"></div>
+            </div>
+
+            <!-- TAB 4: FREEHAND & VECTOR DRAWING VIEW -->
+            <div class="am-drawer-view" id="amDrawerDrawView" style="display: none; padding: 14px; overflow-y: auto;">
+              <div class="am-draw-controls">
+                <label class="am-settings-label">Drawing Tool</label>
+                <div style="display: flex; gap: 8px;">
+                  <button class="am-btn-action active" id="amDrawFreehandBtn" type="button">Pencil</button>
+                  <button class="am-btn-action" id="amDrawVectorBtn" type="button">Vector Path</button>
+                </div>
+                <label class="am-settings-label" style="margin-top: 10px;">Stroke Width</label>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <input type="range" id="amDrawStrokeWidth" min="1" max="50" value="6" style="flex:1;">
+                  <span id="amDrawStrokeWidthVal" style="font-size:12px; color:#fff; width:30px;">6px</span>
+                </div>
+                <label class="am-settings-label" style="margin-top: 10px;">Stroke Color</label>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <input type="color" id="amDrawStrokeColor" value="#00e676">
+                  <input type="text" id="amDrawStrokeColorHex" value="#00e676" style="background:#11131c; border:1px solid rgba(255,255,255,0.1); border-radius:4px; padding:4px 8px; color:#fff; font-size:12px; width:80px;">
+                </div>
+                <div style="display: flex; gap: 8px; margin-top: 14px;">
+                  <button class="am-btn-save" id="amStartDrawingBtn" type="button" style="flex:1;">Start Drawing</button>
+                  <button class="am-btn-cancel" id="amClearDrawingBtn" type="button">Clear</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- TAB 5: TEXT & CUSTOM FONT IMPORTER VIEW -->
+            <div class="am-drawer-view" id="amDrawerTextView" style="display: none; padding: 14px; overflow-y: auto;">
+              <div style="display: flex; flex-direction: column; gap: 12px;">
+                <button class="am-import-media-btn" id="amAddTextLayerBtn" type="button">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                  <span>Add New Text Layer</span>
+                </button>
+
+                <label class="am-settings-label">Text Content</label>
+                <textarea id="amTextInput" rows="3" style="background: #11131c; border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; padding: 8px; color: #fff; font-size: 13px; font-family: inherit; resize: vertical;">Alight Motion</textarea>
+                
+                <label class="am-settings-label">Font Family</label>
+                <div style="display: flex; gap: 6px;">
+                  <select id="amFontFamilySelect" style="flex: 1; background: #11131c; border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; padding: 6px; color: #fff; font-size: 12px;">
+                    <option value="system-ui">System Default</option>
+                    <option value="Roboto" selected>Roboto</option>
+                    <option value="Montserrat">Montserrat</option>
+                    <option value="Poppins">Poppins</option>
+                    <option value="Inter">Inter</option>
+                    <option value="Bebas Neue">Bebas Neue</option>
+                    <option value="Impact">Impact</option>
+                    <option value="Pacifico">Pacifico</option>
+                    <option value="Courier New">Courier New</option>
+                  </select>
+                  <input type="file" id="amFontFileInput" accept=".ttf,.otf,.woff,.woff2" style="display: none;">
+                  <button class="am-btn-action" id="amImportFontBtn" type="button" title="Import Custom Font (.ttf, .otf, .woff)">Font+</button>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                  <div>
+                    <label class="am-settings-label">Font Size</label>
+                    <input type="number" id="amTextFontSize" value="64" min="8" max="400" style="width: 100%; background: #11131c; border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; padding: 6px; color: #fff;">
+                  </div>
+                  <div>
+                    <label class="am-settings-label">Letter Spacing</label>
+                    <input type="number" id="amTextLetterSpacing" value="0" min="-20" max="100" style="width: 100%; background: #11131c; border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; padding: 6px; color: #fff;">
+                  </div>
+                </div>
+
+                <label class="am-settings-label">Text Alignment</label>
+                <div style="display: flex; gap: 6px;">
+                  <button class="am-btn-action active" data-align="left" id="amAlignLeftBtn" type="button">Left</button>
+                  <button class="am-btn-action" data-align="center" id="amAlignCenterBtn" type="button">Center</button>
+                  <button class="am-btn-action" data-align="right" id="amAlignRightBtn" type="button">Right</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- TAB 6: EFFECTS VIEW (192 Verified Effects) -->
+            <div class="am-drawer-view am-effects-view" id="amDrawerEffectsView" style="display: none;">
+              <div style="display: flex; gap: 6px;">
+                <button class="am-add-effect-btn" id="amAddEffectBtn" type="button" style="flex: 2;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                  <span>Add Effect</span>
+                </button>
+                <button class="am-btn-action" id="amCopyEffectsBtn" type="button" title="Copy Effects" style="flex: 1;">Copy</button>
+                <button class="am-btn-action" id="amPasteEffectsBtn" type="button" title="Paste Effects" style="flex: 1;">Paste</button>
+              </div>
+              <div id="amEffectsListBody" style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;"></div>
+            </div>
+
+            <!-- TAB 7: LAYER PROPERTIES & DEEP INSPECTOR -->
+            <div class="am-drawer-view" id="amDrawerPropsView" style="display: none; padding: 14px; overflow-y: auto;">
+              <div id="amLayerInspectorContent"></div>
+            </div>
+
+            <!-- TAB 8: REUSABLE ELEMENTS VIEW -->
+            <div class="am-drawer-view" id="amDrawerElementsView" style="display: none; padding: 14px; overflow-y: auto;">
+              <button class="am-btn-save" id="amSaveReusableBtn" type="button" style="width: 100%;">
+                <span>Save Layer as Reusable Element</span>
+              </button>
+              <div class="am-elements-list" id="amElementsList" style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px;"></div>
+            </div>
+          </div>
+
+          <!-- Alight Motion Right Category Bar (All 8 Categories matching Screenshot 1) -->
+          <div class="am-category-bar">
+            <button class="am-cat-btn" data-tab="shape" type="button" title="Shapes (20+ Vectors)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polygon points="12 6 19 18 5 18"></polygon>
+              </svg>
+              <span>Shape</span>
+            </button>
+            <button class="am-cat-btn active" data-tab="media" type="button" title="Media (Videos & Images)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                <polyline points="21 15 16 10 5 21"></polyline>
+              </svg>
+              <span>Media</span>
+            </button>
+            <button class="am-cat-btn" data-tab="audio" type="button" title="Audio Compatibility & Waveforms">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 18V5l12-2v13"></path>
+                <circle cx="6" cy="18" r="3"></circle>
+                <circle cx="18" cy="16" r="3"></circle>
+              </svg>
+              <span>Audio</span>
+            </button>
+            <button class="am-cat-btn" data-tab="drawing" type="button" title="Freehand & Vector Drawing">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 19l7-7 3 3-7 7-3-3z"></path>
+                <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
+              </svg>
+              <span>Draw</span>
+            </button>
+            <button class="am-cat-btn" data-tab="text" type="button" title="Text & Custom Fonts">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="4 7 4 4 20 4 20 7"></polyline>
+                <line x1="9" y1="20" x2="15" y2="20"></line>
+                <line x1="12" y1="4" x2="12" y2="20"></line>
+              </svg>
+              <span>Text</span>
+            </button>
+            <button class="am-cat-btn" data-tab="fx" type="button" title="Effects (192 Verified)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+              </svg>
+              <span>Effects</span>
+            </button>
+            <button class="am-cat-btn" data-tab="props" type="button" title="Layer Properties & Transforms">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+              </svg>
+              <span>Edit</span>
+            </button>
+            <button class="am-cat-btn" data-tab="elements" type="button" title="Reusable Elements">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                <polyline points="2 17 12 22 22 17"></polyline>
+                <polyline points="2 12 12 17 22 12"></polyline>
+              </svg>
+              <span>Elements</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Project Settings Modal (Resolution, FPS, Background Color) -->
+      <div class="am-modal-overlay" id="amSettingsModal" style="display: none;">
+        <div class="am-modal-card am-settings-modal-card">
+          <div class="am-modal-header">
+            <span class="am-modal-title">Project Settings</span>
+            <button class="am-nav-btn" id="amSettingsCloseBtn" type="button" style="font-size: 18px;">&times;</button>
+          </div>
+          <div class="am-settings-body">
+            <!-- 1. Resolution & Aspect Ratio -->
+            <div class="am-settings-section">
+              <label class="am-settings-label">Resolution / Aspect Ratio</label>
+              <div class="am-ratio-presets">
+                <button type="button" class="am-ratio-btn active" data-w="1080" data-h="1080">
+                  <span class="am-ratio-box ratio-1-1"></span>
+                  <span class="am-ratio-text">1:1 (Square)</span>
+                  <span class="am-ratio-sub">1080 × 1080</span>
+                </button>
+                <button type="button" class="am-ratio-btn" data-w="1080" data-h="1920">
+                  <span class="am-ratio-box ratio-9-16"></span>
+                  <span class="am-ratio-text">9:16 (Story / TikTok)</span>
+                  <span class="am-ratio-sub">1080 × 1920</span>
+                </button>
+                <button type="button" class="am-ratio-btn" data-w="1920" data-h="1080">
+                  <span class="am-ratio-box ratio-16-9"></span>
+                  <span class="am-ratio-text">16:9 (Landscape)</span>
+                  <span class="am-ratio-sub">1920 × 1080</span>
+                </button>
+                <button type="button" class="am-ratio-btn" data-w="1080" data-h="1350">
+                  <span class="am-ratio-box ratio-4-5"></span>
+                  <span class="am-ratio-text">4:5 (Portrait)</span>
+                  <span class="am-ratio-sub">1080 × 1350</span>
+                </button>
+                <button type="button" class="am-ratio-btn" data-w="1080" data-h="1440">
+                  <span class="am-ratio-box ratio-3-4"></span>
+                  <span class="am-ratio-text">3:4 (Tablet)</span>
+                  <span class="am-ratio-sub">1080 × 1440</span>
+                </button>
+              </div>
+              <div class="am-custom-res-row">
+                <div class="am-input-group">
+                  <label for="amSettingWidth">Width</label>
+                  <input type="number" id="amSettingWidth" value="1080" min="128" max="4096" step="2">
+                </div>
+                <span class="am-res-sep">×</span>
+                <div class="am-input-group">
+                  <label for="amSettingHeight">Height</label>
+                  <input type="number" id="amSettingHeight" value="1080" min="128" max="4096" step="2">
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. Frame Rate (FPS) -->
+            <div class="am-settings-section">
+              <label class="am-settings-label">Frame Rate (FPS)</label>
+              <div class="am-fps-pills">
+                <button type="button" class="am-fps-btn active" data-fps="60">60 fps</button>
+                <button type="button" class="am-fps-btn" data-fps="30">30 fps</button>
+                <button type="button" class="am-fps-btn" data-fps="24">24 fps</button>
+                <button type="button" class="am-fps-btn" data-fps="12">12 fps</button>
+              </div>
+              <div class="am-custom-fps-row">
+                <div class="am-input-group">
+                  <label for="amSettingFps">Custom FPS</label>
+                  <input type="number" id="amSettingFps" value="60" min="1" max="120" step="1">
+                </div>
+                <div class="am-fps-calc-hint" id="amFpsCalcHint">1 frame = 16.67 ms (tick step)</div>
+              </div>
+            </div>
+
+            <!-- 3. Background Color -->
+            <div class="am-settings-section">
+              <label class="am-settings-label">Background Color</label>
+              <div class="am-bg-color-grid">
+                <button type="button" class="am-color-swatch active" data-color="#000000" style="background:#000000;" title="Black">
+                  <span class="am-swatch-check">✓</span>
+                </button>
+                <button type="button" class="am-color-swatch am-swatch-transparent" data-color="transparent" title="Transparent">
+                  <span class="am-swatch-check">✓</span>
+                </button>
+                <button type="button" class="am-color-swatch" data-color="#ffffff" style="background:#ffffff;" title="White">
+                  <span class="am-swatch-check" style="color:#000;">✓</span>
+                </button>
+                <button type="button" class="am-color-swatch" data-color="#00ff00" style="background:#00ff00;" title="Green Screen">
+                  <span class="am-swatch-check" style="color:#000;">✓</span>
+                </button>
+                <button type="button" class="am-color-swatch" data-color="#161922" style="background:#161922;" title="Deep Slate">
+                  <span class="am-swatch-check">✓</span>
+                </button>
+                <button type="button" class="am-color-swatch" data-color="#7b8599" style="background:#7b8599;" title="Light Gray">
+                  <span class="am-swatch-check">✓</span>
+                </button>
+              </div>
+              <div class="am-custom-color-row">
+                <div class="am-color-picker-wrap">
+                  <input type="color" id="amSettingBgColorPicker" value="#000000">
+                </div>
+                <input type="text" id="amSettingBgColorHex" value="#000000" placeholder="#000000" spellcheck="false">
+              </div>
+            </div>
+          </div>
+          <div class="am-modal-actions">
+            <button class="am-btn-cancel" id="amSettingsCancelBtn" type="button">Cancel</button>
+            <button class="am-btn-save" id="amSettingsSaveBtn" type="button">Save Settings</button>
+          </div>
+        </div>
+      </div>
+
+<!-- Effect Library Modal (192 Verified Alight Motion Effects) -->
+      <div class="am-modal-overlay" id="amEffectLibraryModal" style="display: none;">
+        <div class="am-modal-card">
+          <div class="am-modal-header">
+            <span class="am-modal-title">Alight Motion Effect Library (192 Verified Effects)</span>
+            <button class="am-nav-btn" id="amModalCloseBtn" type="button" style="font-size: 18px;">&times;</button>
+          </div>
+          <div class="am-eff-search-box">
+            <input type="text" class="am-eff-search-input" id="amEffSearchInput" placeholder="Search 192 effects by name or category (e.g. Box Blur, Chroma Key, Glow, Wave Warp)...">
+          </div>
+          <div class="am-cat-filter-pills">
+            <button class="am-cat-pill active" data-cat="all" type="button">All (192)</button>
+            <button class="am-cat-pill" data-cat="Blur" type="button">Blur (20)</button>
+            <button class="am-cat-pill" data-cat="Color & Light" type="button">Color &amp; Light (32)</button>
+            <button class="am-cat-pill" data-cat="Distortion & Warp" type="button">Distortion &amp; Warp (29)</button>
+            <button class="am-cat-pill" data-cat="Procedural" type="button">Procedural (24)</button>
+            <button class="am-cat-pill" data-cat="3D" type="button">3D (20)</button>
+            <button class="am-cat-pill" data-cat="Move & Transform" type="button">Move &amp; Transform (15)</button>
+            <button class="am-cat-pill" data-cat="Drawing & Edge" type="button">Drawing &amp; Edge (17)</button>
+            <button class="am-cat-pill" data-cat="Matte, Mask & Key" type="button">Matte, Mask &amp; Key (7)</button>
+            <button class="am-cat-pill" data-cat="Opacity & Visibility" type="button">Opacity &amp; Visibility (7)</button>
+            <button class="am-cat-pill" data-cat="Repeat" type="button">Repeat (7)</button>
+            <button class="am-cat-pill" data-cat="Text" type="button">Text (6)</button>
+            <button class="am-cat-pill" data-cat="Other" type="button">Other (8)</button>
+          </div>
+          <div class="am-eff-list-grid" id="amEffListGrid"></div>
+        </div>
+      </div>
+    
+      <!-- Easing Curve Graph Modal (Alight Motion Timing Curves) -->
+      <div class="am-modal-overlay" id="amGraphModal" style="display: none;">
+        <div class="am-modal-card" style="width: 440px; max-width: 95vw;">
+          <div class="am-modal-header">
+            <span class="am-modal-title">Timing Curve / Easing Graph</span>
+            <button class="am-nav-btn" id="amGraphCloseBtn" type="button" style="font-size: 18px;">&times;</button>
+          </div>
+          <div style="padding: 18px; display: flex; flex-direction: column; gap: 14px;">
+            <div style="width: 100%; height: 200px; background: #12141c; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); position: relative;">
+              <canvas id="amCurveCanvas" width="400" height="200" style="width:100%; height:100%; display:block; cursor:crosshair;"></canvas>
+            </div>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <button class="am-cat-pill am-curve-preset active" data-curve="0 0 1 1" type="button">Linear</button>
+              <button class="am-cat-pill am-curve-preset" data-curve="0.4 0 0.2 1" type="button">AM Smooth</button>
+              <button class="am-cat-pill am-curve-preset" data-curve="0.42 0 1 1" type="button">Ease In</button>
+              <button class="am-cat-pill am-curve-preset" data-curve="0 0 0.58 1" type="button">Ease Out</button>
+              <button class="am-cat-pill am-curve-preset" data-curve="0.42 0 0.58 1" type="button">Ease In Out</button>
+              <button class="am-cat-pill am-curve-preset" data-curve="0.1 0.9 0.2 1" type="button">Fast-Slow</button>
+              <button class="am-cat-pill am-curve-preset" data-curve="0.34 1.56 0.64 1" type="button">Overshoot</button>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px;">
+              <button class="am-btn-cancel" id="amGraphCancelBtn" type="button">Cancel</button>
+              <button class="am-btn-save" id="amGraphApplyBtn" type="button">Apply Curve</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Export & Sharing Modal -->
+      <div class="am-modal-overlay" id="amExportModal" style="display: none;">
+        <div class="am-modal-card" style="width: 480px; max-width: 95vw;">
+          <div class="am-modal-header">
+            <span class="am-modal-title">Export &amp; Share Project</span>
+            <button class="am-nav-btn" id="amExportCloseBtn" type="button" style="font-size: 18px;">&times;</button>
+          </div>
+          <div style="padding: 18px; display: flex; flex-direction: column; gap: 14px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <button class="am-ratio-btn" id="amExportXmlActionBtn" type="button" style="padding: 14px 10px;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                <span class="am-ratio-text">Alight Motion XML</span>
+                <span class="am-ratio-sub">Native app project (.xml)</span>
+              </button>
+              <button class="am-ratio-btn" id="amExportJsonActionBtn" type="button" style="padding: 14px 10px;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#38ef7d" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                <span class="am-ratio-text">Project JSON</span>
+                <span class="am-ratio-sub">Backup &amp; Reusable</span>
+              </button>
+              <button class="am-ratio-btn" id="amExportPngActionBtn" type="button" style="padding: 14px 10px;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00d2ff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                <span class="am-ratio-text">Current Frame (PNG)</span>
+                <span class="am-ratio-sub">Hi-res image snapshot</span>
+              </button>
+              <button class="am-ratio-btn" id="amExportVideoActionBtn" type="button" style="padding: 14px 10px;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff4757" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+                <span class="am-ratio-text">Record Video (WebM)</span>
+                <span class="am-ratio-sub">Render timeline animation</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+</section>
+
+  </main>
+
+  <!-- Paste XML Modal -->
+  <div class="modal-overlay" id="pasteXmlModal" style="display: none;">
+    <div class="modal-dialog">
+      <div class="graph-modal-header">
+        <h3>Paste Alight Motion XML</h3>
+        <button class="graph-modal-close" id="closePasteXmlBtn" type="button" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body-pad">
+        <p class="modal-desc">Paste the full XML text exported from Alight Motion to list and convert its shape layers.</p>
+        <textarea id="pasteXmlTextarea" rows="10" class="modal-textarea" placeholder="<?xml version='1.0' encoding='UTF-8' ?>&#10;<scene ..."></textarea>
+        <div class="modal-footer-actions">
+          <button class="btn-sub" id="cancelPasteXmlBtn" type="button">Cancel</button>
+          <button class="btn-sub primary" id="confirmPasteXmlBtn" type="button">Load XML</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Import Preset String Modal (Replaces native prompt for mobile reliability) -->
+  <div class="modal-overlay" id="importSettingsModal" style="display: none;">
+    <div class="modal-dialog">
+      <div class="graph-modal-header">
+        <h3>Load Studio Preset</h3>
+        <button class="graph-modal-close" id="closeImportSettingsBtn" type="button" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body-pad">
+        <p class="modal-desc">Paste a Base64 preset string copied from Flippy Studio to restore all parameters and sections.</p>
+        <textarea id="importSettingsTextarea" rows="5" class="modal-textarea" placeholder="Paste preset string here..." spellcheck="false"></textarea>
+        <div class="modal-footer-actions">
+          <button class="btn-sub" id="cancelImportSettingsBtn" type="button">Cancel</button>
+          <button class="btn-sub primary" id="confirmImportSettingsBtn" type="button">Apply Preset</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast" role="status" aria-live="polite">
+    <span class="toast-icon" aria-hidden="true"></span>
+    <div class="toast-message" id="toastMessage">Copied XML to clipboard</div>
+  </div>
+
+  <!-- Bezier Curve Editor Modal -->
+  <div class="modal-overlay graph-modal" id="graphModal" style="display: none;">
+    <div class="graph-modal-content">
+      <div class="graph-modal-header">
+        <h3>Easing Curve Editor</h3>
+        <div class="graph-modal-actions">
+          <a class="graph-modal-link" href="Graph.html" target="_blank" rel="noopener">Full Tab ↗</a>
+          <button class="btn-sub primary graph-done-btn" id="doneGraphBtn" type="button">Done</button>
+          <button class="graph-modal-close" id="closeGraphBtn" type="button" aria-label="Close curve editor">&times;</button>
+        </div>
+      </div>
+      <div class="graph-modal-body">
+        <iframe id="graphIframe" src="Graph.html" title="Easing curve editor"></iframe>
+        <iframe id="graphIframe2" src="Graph2.html" title="Secondary easing curve editor" style="display: none;"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Workspace Shell (<= 860px) -->
+  <div class="mobile-shell" id="mobileShell">
+    <div class="mobile-header">
+      <div class="mobile-logo">
+        <div class="brand-shutter small" aria-hidden="true">
+          <span></span><span></span><span></span>
+        </div>
+        <span>Flippy <em>v5</em></span>
+      </div>
+      <div class="mobile-header-right">
+        <button class="sound-toggle-btn small active" id="mobileSoundToggleBtn" type="button" aria-label="Toggle Sound Effects">
+          <svg class="icon-sound-on" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          </svg>
+          <svg class="icon-sound-off" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <line x1="23" y1="9" x2="17" y2="15"></line>
+            <line x1="17" y1="9" x2="23" y2="15"></line>
+          </svg>
+        </button>
+        <button class="theme-switch-btn small" id="mobileThemeToggleBtn" type="button" aria-label="Switch color theme">
+          <svg class="icon-sun" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          <svg class="icon-moon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+        <button class="mobile-header-dl-btn" id="mobileHeaderDlBtn" type="button" aria-label="Export Alight Motion XML">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          <span class="dl-text" id="mobileHeaderDlText">Export XML</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Tab 1: Main Wipe Studio (Preview in middle + Download XML in standard spot) -->
+    <div class="mobile-tab-content active" id="mobileTabPreview">
+      <div class="mobile-tab-inner" id="mobilePreviewSlot"></div>
+      <div class="mobile-tab-inner mobile-data-slot" id="mobileDataSlot"></div>
+    </div>
+
+    <!-- Tab 2: Separate Media Converter Tab -->
+    <div class="mobile-tab-content" id="mobileTabConverter">
+      <div class="mobile-tab-inner" id="mobileConverterSlot"></div>
+    </div>
+
+    <!-- Tab 3: Real Preview (Native GLSL / WebGL 3D Engine) -->
+    <div class="mobile-tab-content" id="mobileTabRealPreview">
+      <div class="mobile-tab-inner" id="mobileRealPreviewSlot"></div>
+    </div>
+
+    <!-- Tab 4: YT Converter Tab -->
+    <div class="mobile-tab-content" id="mobileTabYtConverter">
+      <div class="mobile-tab-inner" id="mobileYtConverterSlot"></div>
+    </div>
+
+    <div class="mobile-tab-content" id="mobileTabHollowBox" style="display: none;">
+      <div class="mobile-tab-inner" id="mobileHollowBoxSlot"></div>
+    </div>
+    <div class="mobile-tab-content" id="mobileTabEditing" style="display: none;">
+      <div class="mobile-tab-inner" id="mobileEditingSlot"></div>
+    </div>
+
+    <!-- Floating Resizable Inspector (Friendly Default Size Immediately) -->
+    <div class="mobile-floating-inspector" id="mobileFloatingInspector" role="region" aria-label="Floating Inspector">
+      <div class="mfi-resize-top" id="mfiResizeTop" title="Drag up or down to resize Inspector">
+        <span class="mfi-grab-pill"></span>
+      </div>
+      <div class="mfi-header" id="mfiHeader">
+        <div class="mfi-title-group">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/>
+            <line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/>
+            <line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
+          </svg>
+          <span>Inspector</span>
+          <span class="mfi-size-badge" id="mfiSizeBadge">Comfort</span>
+        </div>
+        <div class="mfi-actions">
+          <button class="mfi-btn" id="mfiSizeCycleBtn" type="button" title="Cycle Inspector size (Comfort / Tall / Compact)">
+            <span>Size</span>
+          </button>
+          <button class="mfi-btn" id="mfiFoldAllBtn" type="button" title="Collapse or expand all sections">
+            <span>Fold</span>
+          </button>
+          <button class="mfi-btn icon-only" id="mfiMinimizeBtn" type="button" title="Minimize floating Inspector" aria-label="Minimize Inspector">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="mfi-body" id="mobileConfigSlot"></div>
+      <div class="mfi-resize-corner" id="mfiResizeCorner" title="Drag corner to resize width and height" aria-hidden="true"></div>
+    </div>
+
+    <nav class="mobile-tab-bar" id="mobileTabBar" aria-label="Mobile workspace navigation">
+      <button class="mobile-tab active" data-tab="mobileTabPreview" type="button">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+        </svg>
+        <span>Wipe Studio</span>
+      </button>
+      <button class="mobile-inspector-pill active" id="mobileInspectorToggleBtn" type="button" aria-expanded="true">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/>
+          <line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/>
+          <line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/>
+          <line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
+        </svg>
+        <span>Inspector</span>
+      </button>
+      <button class="mobile-tab" data-tab="mobileTabConverter" type="button">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+          <circle cx="8.5" cy="8.5" r="1.5"/>
+          <polyline points="21 15 16 10 5 21"/>
+        </svg>
+        <span>Media Converter</span>
+      </button>
+      <button class="mobile-tab" data-tab="mobileTabRealPreview" type="button">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+          <polyline points="2 17 12 22 22 17"/>
+          <polyline points="2 12 12 17 22 12"/>
+        </svg>
+        <span>Real Preview</span>
+      </button>
+      <button class="mobile-tab" data-tab="mobileTabYtConverter" type="button">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/>
+          <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/>
+        </svg>
+        <span>YT Converter</span>
+      </button>
+      <button class="mobile-tab" data-tab="mobileTabEditing" type="button" style="display: none !important;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+        <span>Editing TAB</span>
+      </button>
+    </nav>
+  </div>
+
+  <script src="am_effects_db.js"></script>
+  <script src="ytconverter.js?v=6.0"></script>
+  <script src="app.js?v=5.0"></script>
+  <script src="am_verified_effects.js"></script>
+  <script src="am_glsl_catalog.js"></script>
+  <script src="editing_tab.js?v=1.0"></script>
+  <!-- GSAP & ScrollTrigger for Staggered Card Entrances -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script src="fx.js?v=5.2"></script>
+</body>
+</html>
