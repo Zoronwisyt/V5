@@ -1049,7 +1049,61 @@ At the end of every prompt where changes are made:
 - **Learnings & Invariants**:
   - Keeping `favicon.png` and `apple-touch-icon.png` at their exact referenced filenames in `index.html` ensures immediate compatibility across desktop browsers and iOS home screen bookmarks.
 
+### [2026-11-12 17:43] — Flippy v5: Import XML Project Bookmarks for Beats 1, 2, and 3
+- **Prompt / Request**: Add a feature in the Inspector under Motion / 3D Effect (Beats 1, 2, and 3) to import an Alight Motion XML project and select its bookmarks under Beat 1, Beat 2, and Beat 3.
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\index.html`
+  - `C:\Users\jeduc\Downloads\Flippy v5\styles.css`
+  - `C:\Users\jeduc\Downloads\Flippy v5\app.js`
+  - `C:\Users\jeduc\Downloads\Flippy v5\Flip layer website\AGENT.md`
+- **Adjustments Made**:
+  - Added `.xml-bookmark-bar` with `#importXmlBookmarksBtn`, `#xmlBookmarksFileInput`, and `#xmlBookmarksStatus` inside `#globalTimingControls`, plus `#beat1BookmarkSelect`, `#beat2BookmarkSelect`, and `#beat3BookmarkSelect` dropdowns under Beats 1, 2, and 3.
+  - Styled the importer pill button, status badge, and bookmark `<select>` dropdowns in the `#5D866C` Liquid Glass style.
+  - Added XML `<bookmark t="..."/>` parsing in `app.js` (sorted ascending, deduplicated by ms, converted to `MM:SS:FF` matching `state.fps`), automatically updating `#beat1`/`#beat2`/`#beat3`, `state.beat1Str`/`beat2Str`/`beat3Str`, and `fullUpdate()` on selection.
+- **Learnings & Invariants**:
+  - Keeping the manual `MM:SS:FF` text inputs alongside the imported bookmark dropdowns ensures users can both pick XML bookmarks and fine-tune frame offsets manually.
 
 
 
 
+
+
+
+### 2026-11-12T18:02:36-06:00
+- **Operator Request**: Organize the GUI to be more flexible and organized, allow switching between the Classic (old) GUI and the Flexible (new) GUI, and ensure a smooth transition with sound effects when switching GUI themes.
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\index.html`
+  - `C:\Users\jeduc\Downloads\Flippy v5\styles.css`
+  - `C:\Users\jeduc\Downloads\Flippy v5\fx.js`
+- **Specific Adjustments Made**:
+  - Added `#guiModeToggleBtn` (with `#guiModeLabel`) in `.header-right` and `#mobileGuiModeToggleBtn` in `.mobile-header-right` in `index.html`.
+  - Added `.gui-mode-btn`, `.gui-mode-btn.active`, `.gui-mode-btn.small`, smooth transition choreography (`html.gui-transitioning` + `#app-main, .mobile-shell, .panel, .module` transitions), and `html[data-gui="flexible"]` layout rules in `styles.css`.
+  - Added `playGuiSwitch(isFlexible)` Web Audio API two-tone harmonic chime, `applyGuiMode(mode, withTransition)`, `toggleGuiMode()`, `localStorage` persistence (`flippy_v5_gui_mode`), and click listeners in `fx.js`.
+- **Invariants / Rules to uphold for future turns**:
+  - Preserve `data-gui="classic"` vs `data-gui="flexible"` parity so users can always switch cleanly between Classic and Flexible layouts without HUD overlaps.
+  - Keep `#5D866C` sage green Liquid Glass styling and mobile touch stability intact.
+
+
+### 2026-11-12T18:03:30-06:00
+- **Operator Request**: Add smooth flip tweening animations for the GUI when switching themes/modes.
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\styles.css`
+  - `C:\Users\jeduc\Downloads\Flippy v5\fx.js`
+- **Specific Adjustments Made**:
+  - Added `@keyframes guiFlipTween` (3D `perspective(1200px) rotateX` + `scale` + `opacity`) and `@keyframes guiPanelFlipTween` (`perspective(900px) rotateY` + `scale` + `opacity`) in `styles.css`, applied to `#app-main`, `.mobile-shell`, and `.panel` during `html.gui-transitioning` and `html.theme-transitioning` (with `prefers-reduced-motion: reduce` support).
+  - Updated `toggleTheme()` in `fx.js` to trigger `html.theme-transitioning` for `480ms`, and matched `guiTransitionTimer` in `applyGuiMode()` to `480ms`.
+- **Invariants / Rules to uphold for future turns**:
+  - Keep `guiFlipTween` / `guiPanelFlipTween` non-blocking and respectful of `prefers-reduced-motion`.
+
+
+### 2026-11-12T18:04:27-06:00
+- **Operator Request**: Make the Flexible GUI much easier to view on mobile 9:16 and similar portrait phone screens.
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\styles.css`
+- **Specific Adjustments Made**:
+  - Added `@media (max-width: 900px), (max-aspect-ratio: 3/4)` rules for `html[data-gui="flexible"]` in `styles.css`:
+    - Balanced `.mobile-shell` padding/gap with `env(safe-area-inset-bottom)`.
+    - Sized `.mobile-preview-card` (`clamp(200px, 30vh, 300px)`, `max-height: 36vh`) so the preview and controls share 9:16 screens cleanly.
+    - Enlarged `.mobile-tab` (`min-height: 40px`, `12.5px` bold) and interactive controls (`min-height: 42px`, `13.5px`) for comfortable one-handed viewing and tapping.
+- **Invariants / Rules to uphold for future turns**:
+  - Keep 9:16 portrait mobile touch targets >= 40px and prevent horizontal overflow in Flexible GUI mode.

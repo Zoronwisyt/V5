@@ -3717,6 +3717,117 @@
     state.beat3Str = beat3Input.value;
     fullUpdate();
   });
+
+  // ---- Import XML Project Bookmarks for Beats 1, 2, 3 ----
+  const xmlBookmarksFileInput = $('#xmlBookmarksFileInput');
+  const importXmlBookmarksBtn = $('#importXmlBookmarksBtn');
+  const xmlBookmarksStatus = $('#xmlBookmarksStatus');
+  const beatBookmarkSelects = [
+    { select: $('#beat1BookmarkSelect'), input: beat1Input, key: 'beat1Str', label: 'Beat 1' },
+    { select: $('#beat2BookmarkSelect'), input: beat2Input, key: 'beat2Str', label: 'Beat 2' },
+    { select: $('#beat3BookmarkSelect'), input: beat3Input, key: 'beat3Str', label: 'Beat 3' },
+  ];
+
+  function msToBeatTimecode(ms, fps) {
+    const safeFps = Math.max(1, Number(fps) || 60);
+    const totalFrames = Math.max(0, Math.round((ms / 1000) * safeFps));
+    const f = totalFrames % safeFps;
+    const totalWholeSec = Math.floor(totalFrames / safeFps);
+    const s = totalWholeSec % 60;
+    const m = Math.floor(totalWholeSec / 60);
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}:${String(f).padStart(2, '0')}`;
+  }
+
+  if (importXmlBookmarksBtn && xmlBookmarksFileInput) {
+    importXmlBookmarksBtn.addEventListener('click', () => {
+      xmlBookmarksFileInput.value = '';
+      xmlBookmarksFileInput.click();
+    });
+
+    xmlBookmarksFileInput.addEventListener('change', async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      try {
+        const xmlText = await file.text();
+        const doc = new DOMParser().parseFromString(xmlText, 'text/xml');
+        if (doc.querySelector('parsererror')) {
+          showToast('Invalid XML file. Please select a valid Alight Motion XML.');
+          return;
+        }
+
+        const bookmarkNodes = Array.from(doc.querySelectorAll('bookmark'));
+        const seenMs = new Set();
+        const bookmarks = [];
+
+        bookmarkNodes.forEach((node) => {
+          const rawT = node.getAttribute('t');
+          if (rawT === null) return;
+          const ms = parseFloat(rawT);
+          if (Number.isNaN(ms) || ms < 0) return;
+          const roundedMs = Math.round(ms);
+          if (seenMs.has(roundedMs)) return;
+          seenMs.add(roundedMs);
+          const bmLabel = (node.getAttribute('label') || node.getAttribute('name') || '').trim();
+          bookmarks.push({ ms: roundedMs, label: bmLabel });
+        });
+
+        bookmarks.sort((a, b) => a.ms - b.ms);
+
+        if (bookmarks.length === 0) {
+          if (xmlBookmarksStatus) {
+            xmlBookmarksStatus.textContent = '0 bookmarks';
+            xmlBookmarksStatus.classList.remove('loaded');
+          }
+          beatBookmarkSelects.forEach(({ select }) => {
+            if (select) select.style.display = 'none';
+          });
+          showToast('No <bookmark> markers found in this XML project.');
+          return;
+        }
+
+        const sceneNode = doc.querySelector('scene');
+        const xmlFps = sceneNode ? (parseInt(sceneNode.getAttribute('fps'), 10) || state.fps) : state.fps;
+
+        beatBookmarkSelects.forEach(({ select, label }) => {
+          if (!select) return;
+          select.innerHTML = '';
+          const defaultOpt = document.createElement('option');
+          defaultOpt.value = '';
+          defaultOpt.textContent = `Pick XML bookmark for ${label}…`;
+          select.appendChild(defaultOpt);
+
+          bookmarks.forEach((bm, idx) => {
+            const tc = msToBeatTimecode(bm.ms, state.fps);
+            const opt = document.createElement('option');
+            opt.value = tc;
+            const namePart = bm.label ? ` · ${bm.label}` : '';
+            opt.textContent = `BM ${idx + 1} · ${tc} (${bm.ms}ms)${namePart}`;
+            select.appendChild(opt);
+          });
+
+          select.style.display = 'block';
+        });
+
+        if (xmlBookmarksStatus) {
+          xmlBookmarksStatus.textContent = `${bookmarks.length} bookmark${bookmarks.length === 1 ? '' : 's'} (${xmlFps}fps)`;
+          xmlBookmarksStatus.classList.add('loaded');
+        }
+        showToast(`Loaded ${bookmarks.length} bookmark${bookmarks.length === 1 ? '' : 's'} from ${file.name}`);
+      } catch (err) {
+        showToast('Failed to read XML file.');
+      }
+    });
+  }
+
+  beatBookmarkSelects.forEach(({ select, input, key }) => {
+    if (!select || !input) return;
+    select.addEventListener('change', () => {
+      if (!select.value) return;
+      input.value = select.value;
+      state[key] = select.value;
+      fullUpdate();
+    });
+  });
   function applyAnimTypeUI(animVal, silent = false) {
     if (animVal === 'cube') animVal = 'box';
     state.animType = animVal;

@@ -1605,6 +1605,90 @@ input[type="range"]::-moz-range-thumb {
   color: var(--text-1);
 }
 
+/* XML Bookmark Importer Bar & Selectors */
+.xml-bookmark-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.xml-import-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: linear-gradient(135deg, rgba(124, 168, 140, 0.34) 0%, rgba(93, 134, 108, 0.26) 100%);
+  color: var(--text-1);
+  font-family: var(--font-display);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.30), inset 0 1px 1px rgba(255, 255, 255, 0.28);
+  transition: all 0.2s var(--ease);
+}
+
+.xml-import-btn:hover {
+  background: linear-gradient(135deg, rgba(124, 168, 140, 0.50) 0%, rgba(93, 134, 108, 0.40) 100%);
+  border-color: rgba(255, 255, 255, 0.40);
+  box-shadow: 0 4px 16px rgba(93, 134, 108, 0.36), inset 0 1px 1px rgba(255, 255, 255, 0.40);
+}
+
+.xml-import-btn:active {
+  transform: scale(0.96);
+}
+
+.xml-bookmark-status {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-3);
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(12, 24, 18, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  white-space: nowrap;
+}
+
+.xml-bookmark-status.loaded {
+  color: var(--accent-bright);
+  border-color: rgba(93, 134, 108, 0.52);
+  background: rgba(93, 134, 108, 0.20);
+}
+
+.beat-input-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.bookmark-select {
+  width: 100%;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: var(--r-sm);
+  border: 1px solid rgba(93, 134, 108, 0.45);
+  background: rgba(8, 17, 12, 0.78);
+  color: var(--accent-bright);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+
+.bookmark-select:focus {
+  border-color: var(--accent-hi);
+  box-shadow: 0 0 0 2px rgba(93, 134, 108, 0.28);
+}
+
 /* Beat Track & Dynamic Sections */
 .beat-track {
   display: flex;
@@ -5474,4 +5558,202 @@ input[type="range"]::-moz-range-thumb {
 .ytc-bitrate-slider { width:100%; accent-color: var(--accent, var(--cyan)); }
 .ytc-bitrate-slider:disabled { opacity:.4; }
 .ytc-bitrate-hint { font-family: var(--font-mono); font-size:10px; color: var(--text-3); line-height:1.4; }
+
+/* ==========================================================================
+   GUI MODE SWITCHER (CLASSIC <-> FLEXIBLE) & SMOOTH TRANSITIONS
+   ========================================================================== */
+.gui-mode-btn {
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(14, 29, 21, 0.50);
+  background-image: var(--glass-glare);
+  backdrop-filter: blur(16px) saturate(185%);
+  -webkit-backdrop-filter: blur(16px) saturate(185%);
+  color: var(--text-2);
+  font-family: var(--font-display);
+  font-size: 11.5px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.18), 0 2px 8px rgba(0, 0, 0, 0.30);
+  transition: all 0.25s var(--ease);
+  white-space: nowrap;
+}
+
+.gui-mode-btn:hover {
+  color: var(--text-1);
+  background: rgba(93, 134, 108, 0.28);
+  border-color: rgba(255, 255, 255, 0.30);
+}
+
+.gui-mode-btn:active {
+  transform: scale(0.95);
+}
+
+.gui-mode-btn.active {
+  color: #ffffff;
+  background: linear-gradient(135deg, rgba(124, 168, 140, 0.44) 0%, rgba(93, 134, 108, 0.34) 100%);
+  border-color: rgba(255, 255, 255, 0.32);
+  box-shadow: 0 0 16px rgba(93, 134, 108, 0.38), inset 0 1px 1px rgba(255, 255, 255, 0.34);
+}
+
+.gui-mode-btn.small {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  justify-content: center;
+}
+
+/* Smooth GUI & Theme Switch Flip Tweening */
+#app-main,
+.mobile-shell,
+.panel,
+.module {
+  transition:
+    grid-template-columns 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    gap 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+    padding 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+    border-radius 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.32s ease;
+  transform-style: preserve-3d;
+}
+
+@keyframes guiFlipTween {
+  0% {
+    opacity: 1;
+    transform: perspective(1200px) rotateX(0deg) scale(1);
+  }
+  42% {
+    opacity: 0.58;
+    transform: perspective(1200px) rotateX(6deg) scale(0.978);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(1200px) rotateX(0deg) scale(1);
+  }
+}
+
+@keyframes guiPanelFlipTween {
+  0% {
+    opacity: 1;
+    transform: perspective(900px) rotateY(0deg) scale(1);
+  }
+  45% {
+    opacity: 0.65;
+    transform: perspective(900px) rotateY(-4.5deg) scale(0.982);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(900px) rotateY(0deg) scale(1);
+  }
+}
+
+html.gui-transitioning #app-main,
+html.gui-transitioning .mobile-shell,
+html.theme-transitioning #app-main,
+html.theme-transitioning .mobile-shell {
+  animation: guiFlipTween 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+html.gui-transitioning .panel,
+html.theme-transitioning .panel {
+  animation: guiPanelFlipTween 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.gui-transitioning #app-main,
+  html.gui-transitioning .mobile-shell,
+  html.theme-transitioning #app-main,
+  html.theme-transitioning .mobile-shell,
+  html.gui-transitioning .panel,
+  html.theme-transitioning .panel {
+    animation: none;
+  }
+}
+
+/* Flexible Organized GUI Mode */
+html[data-gui="flexible"] main#app-main {
+  max-width: 1840px;
+  grid-template-columns: clamp(300px, 23vw, 360px) minmax(0, 1.35fr) clamp(320px, 25vw, 400px);
+  gap: 18px;
+  padding: 18px 22px 26px;
+}
+
+html[data-gui="flexible"] .controls-body {
+  gap: 12px;
+  padding: 14px;
+}
+
+html[data-gui="flexible"] .panel {
+  border-radius: 24px;
+}
+
+html[data-gui="flexible"] .module {
+  border-radius: 18px;
+}
+
+html[data-gui="flexible"] .mobile-tab-inner {
+  gap: 10px;
+  padding: 10px;
+}
+
+/* Mobile 9:16 & Portrait Phone Optimization for Flexible GUI */
+@media (max-width: 900px), (max-aspect-ratio: 3/4) {
+  html[data-gui="flexible"] .mobile-shell {
+    padding: 8px 10px calc(12px + env(safe-area-inset-bottom, 0px));
+    gap: 10px;
+  }
+
+  html[data-gui="flexible"] .mobile-header {
+    padding: 8px 12px;
+    border-radius: 18px;
+    min-height: 52px;
+  }
+
+  html[data-gui="flexible"] .mobile-preview-card {
+    border-radius: 20px;
+    min-height: clamp(200px, 30vh, 300px);
+    max-height: 36vh;
+  }
+
+  html[data-gui="flexible"] .mobile-tab-bar {
+    gap: 6px;
+    padding: 5px;
+    border-radius: 16px;
+  }
+
+  html[data-gui="flexible"] .mobile-tab {
+    min-height: 40px;
+    font-size: 12.5px;
+    font-weight: 600;
+    border-radius: 12px;
+    padding: 6px 8px;
+  }
+
+  html[data-gui="flexible"] .mobile-tab-inner {
+    gap: 12px;
+    padding: 12px 10px 18px;
+  }
+
+  html[data-gui="flexible"] .mobile-tab-inner .module,
+  html[data-gui="flexible"] .mobile-tab-inner .panel {
+    border-radius: 18px;
+    padding: 12px;
+  }
+
+  html[data-gui="flexible"] .mobile-tab-inner button,
+  html[data-gui="flexible"] .mobile-tab-inner .btn,
+  html[data-gui="flexible"] .mobile-tab-inner select,
+  html[data-gui="flexible"] .mobile-tab-inner input[type="text"],
+  html[data-gui="flexible"] .mobile-tab-inner input[type="number"] {
+    min-height: 42px;
+    font-size: 13.5px;
+  }
+}
+
 

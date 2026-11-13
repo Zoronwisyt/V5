@@ -375,7 +375,13 @@
     StudioAudio.playClick();
   }
 
+  let themeTransitionTimer = null;
   function toggleTheme() {
+    document.documentElement.classList.add('theme-transitioning');
+    clearTimeout(themeTransitionTimer);
+    themeTransitionTimer = setTimeout(() => {
+      document.documentElement.classList.remove('theme-transitioning');
+    }, 480);
     const cur = document.documentElement.getAttribute('data-theme') || 'dark';
     applyTheme(cur === 'dark' ? 'light' : 'dark');
   }
@@ -395,6 +401,68 @@
       });
     }
   });
+
+  // ==========================================================================
+  // 4B. GUI MODE SWITCHER (CLASSIC vs FLEXIBLE) + SMOOTH TRANSITION & SFX
+  // ==========================================================================
+  const guiModeToggleBtn = document.getElementById('guiModeToggleBtn');
+  const mobileGuiModeToggleBtn = document.getElementById('mobileGuiModeToggleBtn');
+  const guiModeLabel = document.getElementById('guiModeLabel');
+  let guiTransitionTimer = null;
+
+  function playGuiSwitch(isFlexible) {
+    if (localStorage.getItem('flippy_sfx_enabled') === 'false') return;
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const now = ctx.currentTime;
+      const freqs = isFlexible ? [440, 587.33] : [587.33, 440];
+      freqs.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.065);
+        gain.gain.setValueAtTime(0.0001, now + idx * 0.065);
+        gain.gain.exponentialRampToValueAtTime(0.06, now + idx * 0.065 + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.065 + 0.16);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.065);
+        osc.stop(now + idx * 0.065 + 0.17);
+      });
+    } catch (e) {}
+  }
+
+  function applyGuiMode(mode, withTransition = false) {
+    const next = mode === 'flexible' ? 'flexible' : 'classic';
+    const isFlexible = next === 'flexible';
+
+    if (withTransition) {
+      document.documentElement.classList.add('gui-transitioning');
+      clearTimeout(guiTransitionTimer);
+      guiTransitionTimer = setTimeout(() => {
+        document.documentElement.classList.remove('gui-transitioning');
+      }, 480);
+      playGuiSwitch(isFlexible);
+    }
+
+    document.documentElement.setAttribute('data-gui', next);
+    localStorage.setItem('flippy_v5_gui_mode', next);
+
+    if (guiModeToggleBtn) guiModeToggleBtn.classList.toggle('active', isFlexible);
+    if (mobileGuiModeToggleBtn) mobileGuiModeToggleBtn.classList.toggle('active', isFlexible);
+    if (guiModeLabel) guiModeLabel.textContent = isFlexible ? 'Flexible' : 'Classic';
+  }
+
+  function toggleGuiMode() {
+    const cur = document.documentElement.getAttribute('data-gui') || 'classic';
+    applyGuiMode(cur === 'classic' ? 'flexible' : 'classic', true);
+  }
+
+  if (guiModeToggleBtn) guiModeToggleBtn.addEventListener('click', toggleGuiMode);
+  if (mobileGuiModeToggleBtn) mobileGuiModeToggleBtn.addEventListener('click', toggleGuiMode);
+  applyGuiMode(localStorage.getItem('flippy_v5_gui_mode') || 'classic', false);
 
   // ==========================================================================
   // 5. GLOBAL INTERACTIVE SFX & ANIMATIONS HOOK
