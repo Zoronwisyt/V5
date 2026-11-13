@@ -1220,3 +1220,17 @@ At the end of every prompt where changes are made:
   - Forced `opacity: 1 !important; pointer-events: auto !important;` on `html[data-inspector="tab"].inspector-tab-open .mobile-floating-inspector`, hid `.mfi-header` in tab mode so the settings cards start cleanly at the top like Wipe Studio, and styled `.mfi-body .controls-body` with `flex-direction: column; gap: 12px; padding: 0;`.
 - **Invariants / Rules to uphold for future turns**:
   - Always strip `'hidden-for-tab'` and inline resize geometry when opening Inspector in full-page tab mode.
+
+
+### 2026-11-12T20:38:13-06:00
+- **Operator Request**: Make the mobile Inspector tab a true standalone full-screen page (never co-existing with Wipe Studio) by default instead of a dropdown/floating panel.
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\index.html`
+  - `C:\Users\jeduc\Downloads\Flippy v5\fx.js`
+  - `C:\Users\jeduc\Downloads\Flippy v5\styles.css`
+- **Specific Adjustments Made**:
+  - Added dedicated `<div class="mobile-tab-content" id="mobileTabInspector"><div class="mobile-tab-inner" id="mobileInspectorPageSlot"></div></div>` in `index.html` alongside `#mobileTabPreview` (Wipe Studio) and the other full-page mobile tabs.
+  - Changed default `data-inspector` mode in `fx.js` from `'floating'` to `'tab'`, added `syncInspectorDomPlacement()` to move `.controls-body` between `#mobileConfigSlot` and `#mobileInspectorPageSlot`, and wired `#mobileInspectorToggleBtn` in `'tab'` mode to hide `#mobileTabPreview` / all other `.mobile-tab-content` pages and activate `#mobileTabInspector` exclusively.
+  - Simplified `styles.css` `data-inspector="tab"` rules to hide `#mobileFloatingInspector` and render `#mobileInspectorPageSlot .controls-body` as a full-page vertical settings layout.
+- **Invariants / Rules to uphold for future turns**:
+  - `data-inspector="tab"` is the default on mobile; Inspector and Wipe Studio must never co-exist when Inspector is opened in tab mode.

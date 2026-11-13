@@ -455,12 +455,27 @@
   }
 
   // ==========================================================================
-  // 4C. INSPECTOR LAYOUT SWITCH (FLOATING vs OWN TAB) - mobile
+  // 4C. INSPECTOR LAYOUT SWITCH (OWN FULL-PAGE TAB [DEFAULT] vs FLOATING)
   // ==========================================================================
   const inspectorModeBtn = document.getElementById('mobileInspectorModeBtn');
   const inspectorPill = document.getElementById('mobileInspectorToggleBtn');
   const floatingInspector = document.getElementById('mobileFloatingInspector');
+  const inspectorTabPage = document.getElementById('mobileTabInspector');
+  const inspectorPageSlot = document.getElementById('mobileInspectorPageSlot');
+  const mobileConfigSlot = document.getElementById('mobileConfigSlot');
   const rootEl = document.documentElement;
+
+  function syncInspectorDomPlacement() {
+    if (window.innerWidth > 860) return;
+    const mode = rootEl.getAttribute('data-inspector') || 'tab';
+    const controlsBody = document.querySelector('#mobileConfigSlot > .controls-body, #mobileInspectorPageSlot > .controls-body');
+    if (!controlsBody) return;
+    if (mode === 'tab' && inspectorPageSlot && controlsBody.parentElement !== inspectorPageSlot) {
+      inspectorPageSlot.appendChild(controlsBody);
+    } else if (mode === 'floating' && mobileConfigSlot && controlsBody.parentElement !== mobileConfigSlot) {
+      mobileConfigSlot.appendChild(controlsBody);
+    }
+  }
 
   function setInspectorTabOpen(open) {
     rootEl.classList.toggle('inspector-tab-open', open);
@@ -469,23 +484,28 @@
       inspectorPill.setAttribute('aria-expanded', String(open));
     }
     if (open) {
+      syncInspectorDomPlacement();
+      document.querySelectorAll('.mobile-tab-content.active').forEach((c) => {
+        if (c !== inspectorTabPage) c.classList.remove('active');
+      });
       document.querySelectorAll('.mobile-tab.active').forEach((t) => t.classList.remove('active'));
-      if (floatingInspector) {
-        floatingInspector.classList.remove('minimized', 'collapsed', 'hidden', 'hidden-for-tab');
-        floatingInspector.style.height = '';
-        floatingInspector.style.width = '';
-        floatingInspector.style.left = '';
-        floatingInspector.style.bottom = '';
+      if (inspectorTabPage) inspectorTabPage.classList.add('active');
+    } else {
+      if (inspectorTabPage) inspectorTabPage.classList.remove('active');
+      if (!document.querySelector('.mobile-tab-content.active')) {
+        const previewTab = document.getElementById('mobileTabPreview');
+        if (previewTab) previewTab.classList.add('active');
       }
-    } else if (!document.querySelector('.mobile-tab.active')) {
-      const activeContent = document.querySelector('.mobile-tab-content.active');
-      const match = activeContent && document.querySelector(`.mobile-tab[data-tab="${activeContent.id}"]`);
-      if (match) match.classList.add('active');
+      if (!document.querySelector('.mobile-tab.active')) {
+        const activeContent = document.querySelector('.mobile-tab-content.active');
+        const match = activeContent && document.querySelector(`.mobile-tab[data-tab="${activeContent.id}"]`);
+        if (match) match.classList.add('active');
+      }
     }
   }
 
   function applyInspectorMode(mode, withTransition = false) {
-    const next = mode === 'tab' ? 'tab' : 'floating';
+    const next = mode === 'floating' ? 'floating' : 'tab';
     if (withTransition) {
       triggerPageFlipTransition(next === 'tab');
       rootEl.classList.add('gui-transitioning');
@@ -496,18 +516,22 @@
     rootEl.setAttribute('data-inspector', next);
     localStorage.setItem('flippy_v5_inspector_mode', next);
     if (inspectorModeBtn) inspectorModeBtn.classList.toggle('active', next === 'tab');
-    if (next === 'floating') rootEl.classList.remove('inspector-tab-open');
-    else setInspectorTabOpen(false);
+    syncInspectorDomPlacement();
+    if (next === 'floating') {
+      setInspectorTabOpen(false);
+    } else {
+      setInspectorTabOpen(false);
+    }
   }
 
   if (inspectorModeBtn) {
     inspectorModeBtn.addEventListener('click', () => {
-      const cur = rootEl.getAttribute('data-inspector') || 'floating';
+      const cur = rootEl.getAttribute('data-inspector') || 'tab';
       applyInspectorMode(cur === 'floating' ? 'tab' : 'floating', true);
     });
   }
 
-  // In tab mode, Inspector pill behaves like a real tab (capture to override floating toggle)
+  // In tab mode, Inspector pill switches to the dedicated #mobileTabInspector full page
   if (inspectorPill) {
     inspectorPill.addEventListener('click', (e) => {
       if (rootEl.getAttribute('data-inspector') !== 'tab') return;
@@ -522,12 +546,16 @@
     tab.addEventListener('click', () => {
       if (rootEl.getAttribute('data-inspector') === 'tab') {
         rootEl.classList.remove('inspector-tab-open');
+        if (inspectorTabPage) inspectorTabPage.classList.remove('active');
         if (inspectorPill) inspectorPill.classList.remove('active');
       }
     });
   });
 
-  applyInspectorMode(localStorage.getItem('flippy_v5_inspector_mode') || 'floating', false);
+  window.addEventListener('flippy:unlocked', () => setTimeout(syncInspectorDomPlacement, 60));
+  window.addEventListener('resize', () => setTimeout(syncInspectorDomPlacement, 60));
+  applyInspectorMode(localStorage.getItem('flippy_v5_inspector_mode') || 'tab', false);
+  setTimeout(syncInspectorDomPlacement, 120);
 
   // ==========================================================================
   // 5. GLOBAL INTERACTIVE SFX & ANIMATIONS HOOK
