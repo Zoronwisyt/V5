@@ -1134,3 +1134,13 @@ At the end of every prompt where changes are made:
     - `.mobile-tab-content` bottom padding (`140px + safe-area`) and `.mobile-floating-inspector` max-height cap so nothing hides behind the docked bars.
 - **Invariants / Rules to uphold for future turns**:
   - On tall phones, all primary controls must live in the bottom thumb zone; keep tab bar to one row.
+
+
+### 2026-11-12T18:24:00-06:00
+- **Operator Request**: GUI too small on iPhone 14 Pro Max; add a separate switch so the Inspector can be its own tab instead of floating.
+- **Files Modified**: `index.html`, `fx.js`, `styles.css`
+- **Specific Adjustments Made**:
+  - `index.html`: added `#mobileInspectorModeBtn` in `.mobile-header-right` (between GUI and Theme buttons).
+  - `fx.js` (section 4C): `applyInspectorMode('floating'|'tab')` sets `html[data-inspector]`, persists `flippy_v5_inspector_mode`, plays the switch chime + flip transition. In tab mode a capture-phase listener on `#mobileInspectorToggleBtn` overrides the floating toggle and opens it as a tab (`html.inspector-tab-open`); other `.mobile-tab` clicks close it.
+  - `styles.css`: larger tall-phone sizing (tabs 58px/11px/21px icons, header buttons 42px, inputs 44px/14px); `data-inspector="tab"` rules render the inspector full-width between top safe area and bottom docks, hide resize/minimize/size controls.
+- **Invariants**: GUI mode (classic/flexible) and Inspector mode (floating/tab) are independent switches; keep both persisted.

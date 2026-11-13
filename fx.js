@@ -470,6 +470,74 @@
   applyGuiMode(localStorage.getItem('flippy_v5_gui_mode') || 'classic', false);
 
   // ==========================================================================
+  // 4C. INSPECTOR LAYOUT SWITCH (FLOATING vs OWN TAB) - mobile
+  // ==========================================================================
+  const inspectorModeBtn = document.getElementById('mobileInspectorModeBtn');
+  const inspectorPill = document.getElementById('mobileInspectorToggleBtn');
+  const floatingInspector = document.getElementById('mobileFloatingInspector');
+  const rootEl = document.documentElement;
+
+  function setInspectorTabOpen(open) {
+    rootEl.classList.toggle('inspector-tab-open', open);
+    if (inspectorPill) {
+      inspectorPill.classList.toggle('active', open);
+      inspectorPill.setAttribute('aria-expanded', String(open));
+    }
+    if (open) {
+      document.querySelectorAll('.mobile-tab.active').forEach((t) => t.classList.remove('active'));
+      if (floatingInspector) floatingInspector.classList.remove('minimized', 'collapsed', 'hidden');
+    } else if (!document.querySelector('.mobile-tab.active')) {
+      const activeContent = document.querySelector('.mobile-tab-content.active');
+      const match = activeContent && document.querySelector(`.mobile-tab[data-tab="${activeContent.id}"]`);
+      if (match) match.classList.add('active');
+    }
+  }
+
+  function applyInspectorMode(mode, withTransition = false) {
+    const next = mode === 'tab' ? 'tab' : 'floating';
+    if (withTransition) {
+      rootEl.classList.add('gui-transitioning');
+      clearTimeout(guiTransitionTimer);
+      guiTransitionTimer = setTimeout(() => rootEl.classList.remove('gui-transitioning'), 480);
+      playGuiSwitch(next === 'tab');
+    }
+    rootEl.setAttribute('data-inspector', next);
+    localStorage.setItem('flippy_v5_inspector_mode', next);
+    if (inspectorModeBtn) inspectorModeBtn.classList.toggle('active', next === 'tab');
+    if (next === 'floating') rootEl.classList.remove('inspector-tab-open');
+    else setInspectorTabOpen(false);
+  }
+
+  if (inspectorModeBtn) {
+    inspectorModeBtn.addEventListener('click', () => {
+      const cur = rootEl.getAttribute('data-inspector') || 'floating';
+      applyInspectorMode(cur === 'floating' ? 'tab' : 'floating', true);
+    });
+  }
+
+  // In tab mode, Inspector pill behaves like a real tab (capture to override floating toggle)
+  if (inspectorPill) {
+    inspectorPill.addEventListener('click', (e) => {
+      if (rootEl.getAttribute('data-inspector') !== 'tab') return;
+      e.stopImmediatePropagation();
+      e.preventDefault();
+      setInspectorTabOpen(true);
+      StudioAudio.playTab();
+    }, true);
+  }
+
+  document.querySelectorAll('.mobile-tab[data-tab]').forEach((tab) => {
+    tab.addEventListener('click', () => {
+      if (rootEl.getAttribute('data-inspector') === 'tab') {
+        rootEl.classList.remove('inspector-tab-open');
+        if (inspectorPill) inspectorPill.classList.remove('active');
+      }
+    });
+  });
+
+  applyInspectorMode(localStorage.getItem('flippy_v5_inspector_mode') || 'floating', false);
+
+  // ==========================================================================
   // 5. GLOBAL INTERACTIVE SFX & ANIMATIONS HOOK
   // ==========================================================================
   document.addEventListener('click', (e) => {

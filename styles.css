@@ -5822,3 +5822,121 @@ html[data-gui="flexible"] .mobile-tab-inner {
     max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 150px);
   }
 }
+
+
+/* ==========================================================================
+   iPhone 14 Pro Max readability: larger tab bar, header dock & controls
+   ========================================================================== */
+@media (max-width: 860px) and (min-height: 700px) {
+  .mobile-tab,
+  .mobile-inspector-pill,
+  .mobile-gui-pill {
+    min-height: 58px;
+    font-size: 11px;
+    gap: 4px;
+  }
+
+  .mobile-tab svg,
+  .mobile-inspector-pill svg,
+  .mobile-gui-pill svg {
+    width: 21px;
+    height: 21px;
+  }
+
+  html .mobile-shell .mobile-header {
+    bottom: calc(max(8px, env(safe-area-inset-bottom, 8px)) + 80px);
+    min-height: 56px;
+  }
+
+  .mobile-header .sound-toggle-btn.small,
+  .mobile-header .gui-mode-btn.small,
+  .mobile-header .theme-switch-btn.small {
+    width: 42px;
+    height: 42px;
+  }
+
+  .mobile-header .gui-mode-btn.small svg,
+  .mobile-header .sound-toggle-btn.small svg,
+  .mobile-header .theme-switch-btn.small svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .mobile-header-dl-btn {
+    min-height: 42px;
+    font-size: 13px;
+  }
+
+  .mobile-header-right {
+    gap: 6px;
+  }
+
+  .mobile-tab-content {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 160px) !important;
+  }
+
+  .mobile-tab-inner,
+  .mfi-body {
+    font-size: 14px;
+  }
+
+  .mobile-tab-inner label,
+  .mfi-body label {
+    font-size: 13px;
+  }
+
+  .mobile-tab-inner button,
+  .mobile-tab-inner select,
+  .mobile-tab-inner input:not([type="range"]):not([type="checkbox"]):not([type="radio"]),
+  .mfi-body button,
+  .mfi-body select,
+  .mfi-body input:not([type="range"]):not([type="checkbox"]):not([type="radio"]) {
+    min-height: 44px;
+    font-size: 14px;
+  }
+}
+
+/* ==========================================================================
+   Inspector as its own TAB (data-inspector="tab")
+   ========================================================================== */
+html[data-inspector="tab"] .mobile-floating-inspector {
+  display: none !important;
+}
+
+html[data-inspector="tab"].inspector-tab-open .mobile-tab-content {
+  display: none !important;
+}
+
+html[data-inspector="tab"].inspector-tab-open .mobile-floating-inspector {
+  display: flex !important;
+  flex-direction: column;
+  position: fixed !important;
+  top: env(safe-area-inset-top, 0px) !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: calc(max(8px, env(safe-area-inset-bottom, 8px)) + 150px) !important;
+  width: auto !important;
+  height: auto !important;
+  max-height: none !important;
+  transform: none !important;
+  margin: 0 !important;
+  border-radius: 0 0 22px 22px !important;
+  z-index: 150;
+}
+
+html[data-inspector="tab"] .mfi-resize-top,
+html[data-inspector="tab"] .mfi-resize-corner,
+html[data-inspector="tab"] #mfiSizeCycleBtn,
+html[data-inspector="tab"] #mfiMinimizeBtn,
+html[data-inspector="tab"] .mfi-size-badge {
+  display: none !important;
+}
+
+html[data-inspector="tab"] .mfi-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  max-height: none !important;
+  padding-bottom: 24px;
+}
