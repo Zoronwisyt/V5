@@ -470,7 +470,13 @@
     }
     if (open) {
       document.querySelectorAll('.mobile-tab.active').forEach((t) => t.classList.remove('active'));
-      if (floatingInspector) floatingInspector.classList.remove('minimized', 'collapsed', 'hidden');
+      if (floatingInspector) {
+        floatingInspector.classList.remove('minimized', 'collapsed', 'hidden', 'hidden-for-tab');
+        floatingInspector.style.height = '';
+        floatingInspector.style.width = '';
+        floatingInspector.style.left = '';
+        floatingInspector.style.bottom = '';
+      }
     } else if (!document.querySelector('.mobile-tab.active')) {
       const activeContent = document.querySelector('.mobile-tab-content.active');
       const match = activeContent && document.querySelector(`.mobile-tab[data-tab="${activeContent.id}"]`);

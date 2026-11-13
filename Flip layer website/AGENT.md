@@ -1208,3 +1208,15 @@ At the end of every prompt where changes are made:
   - Updated `html[data-inspector="tab"].inspector-tab-open .mobile-floating-inspector` in `styles.css` to a full-screen `100vw × 100dvh` (`inset: 0`, `border-radius: 0`, `border: none`, `box-shadow: none`, solid `--bg-canvas` backdrop) page view with a crisp full-width `.mfi-header` and scrollable `.mfi-body` cleared above the bottom dock.
 - **Invariants / Rules to uphold for future turns**:
   - Keep branding as `FL-5` across all visible UI and page metadata.
+
+
+### 2026-11-12T20:32:53-06:00
+- **Operator Request**: Make the Inspector Tab a true full-page editing settings view like "Wipe Studio" instead of a floating/mini tab.
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\fx.js`
+  - `C:\Users\jeduc\Downloads\Flippy v5\styles.css`
+- **Specific Adjustments Made**:
+  - Updated `setInspectorTabOpen(true)` in `fx.js` to also remove `'hidden-for-tab'` (which previously left `#mobileFloatingInspector` at `opacity: 0; pointer-events: none;`) and clear inline drag-resize dimensions (`height`, `width`, `left`, `bottom`).
+  - Forced `opacity: 1 !important; pointer-events: auto !important;` on `html[data-inspector="tab"].inspector-tab-open .mobile-floating-inspector`, hid `.mfi-header` in tab mode so the settings cards start cleanly at the top like Wipe Studio, and styled `.mfi-body .controls-body` with `flex-direction: column; gap: 12px; padding: 0;`.
+- **Invariants / Rules to uphold for future turns**:
+  - Always strip `'hidden-for-tab'` and inline resize geometry when opening Inspector in full-page tab mode.
