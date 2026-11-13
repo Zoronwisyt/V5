@@ -1,5 +1,5 @@
 /* ==========================================================================
-   FLIPPY v5 — STUDIO INTERACTION, THEME & TACTILE AUDIO CONTROLLER
+   FL-5 — STUDIO INTERACTION, THEME & TACTILE AUDIO CONTROLLER
    Inspector accordions · Math drawer · Dark green theme · Shortcuts
    GSAP & ScrollTrigger Staggered Card Entrance Animations
    Web Audio API Studio Synthesizer (Zero-dependency, offline sound effects)

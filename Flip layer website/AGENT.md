@@ -1195,3 +1195,16 @@ At the end of every prompt where changes are made:
   - Aligned `.mobile-header` (`bottom: calc(max(6px, env(safe-area-inset-bottom, 6px)) + 48px)`), `.mobile-tab-content` (`display: flex; flex-direction: column; padding-bottom: +90px`), `.mobile-floating-inspector` (`bottom: +86px`), and `data-inspector="tab"` (`bottom: +86px`) to fill the screen cleanly down to the bottom dock.
 - **Invariants / Rules to uphold for future turns**:
   - Keep `.mobile-tab-bar` flush at `bottom: 0` using `padding-bottom: max(6px, env(safe-area-inset-bottom, 6px))` instead of `bottom: env(safe-area-inset-bottom)` so no empty strip appears below it.
+
+
+### 2026-11-12T20:27:03-06:00
+- **Operator Request**: Make the Inspector Tab a full-screen page instead of a mini tab, and rename all mentions of "Flippy v5" across the website to "FL-5".
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\index.html`
+  - `C:\Users\jeduc\Downloads\Flippy v5\styles.css`
+  - `C:\Users\jeduc\Downloads\Flippy v5\fx.js`
+- **Specific Adjustments Made**:
+  - Replaced all `Flippy v5` / `Flippy <span>v5</span>` / `Flippy <em>v5</em>` / desktop `Flippy` + `v5` pill text and metadata (`<title>`, `apple-mobile-web-app-title`, lock screen heading, desktop header, mobile header, and CSS/JS file header comments) with `FL-5`.
+  - Updated `html[data-inspector="tab"].inspector-tab-open .mobile-floating-inspector` in `styles.css` to a full-screen `100vw × 100dvh` (`inset: 0`, `border-radius: 0`, `border: none`, `box-shadow: none`, solid `--bg-canvas` backdrop) page view with a crisp full-width `.mfi-header` and scrollable `.mfi-body` cleared above the bottom dock.
+- **Invariants / Rules to uphold for future turns**:
+  - Keep branding as `FL-5` across all visible UI and page metadata.
