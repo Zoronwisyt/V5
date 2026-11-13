@@ -375,15 +375,36 @@
     StudioAudio.playClick();
   }
 
+  let pageFlipSheetTimer = null;
+  function triggerPageFlipTransition(forward = true) {
+    let sheet = document.getElementById('guiPageFlipSheet');
+    if (!sheet) {
+      sheet = document.createElement('div');
+      sheet.id = 'guiPageFlipSheet';
+      sheet.className = 'gui-pageflip-sheet';
+      sheet.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(sheet);
+    }
+    sheet.classList.remove('flip-forward', 'flip-reverse');
+    void sheet.offsetWidth; // force reflow so rapid switches replay cleanly
+    sheet.classList.add(forward ? 'flip-forward' : 'flip-reverse');
+    clearTimeout(pageFlipSheetTimer);
+    pageFlipSheetTimer = setTimeout(() => {
+      sheet.classList.remove('flip-forward', 'flip-reverse');
+    }, 620);
+  }
+
   let themeTransitionTimer = null;
   function toggleTheme() {
+    const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+    const nextLight = cur === 'dark';
+    triggerPageFlipTransition(nextLight);
     document.documentElement.classList.add('theme-transitioning');
     clearTimeout(themeTransitionTimer);
     themeTransitionTimer = setTimeout(() => {
       document.documentElement.classList.remove('theme-transitioning');
-    }, 480);
-    const cur = document.documentElement.getAttribute('data-theme') || 'dark';
-    applyTheme(cur === 'dark' ? 'light' : 'dark');
+    }, 540);
+    applyTheme(nextLight ? 'light' : 'dark');
   }
 
   if (themeToggleBtn) themeToggleBtn.addEventListener('click', toggleTheme);
@@ -441,11 +462,12 @@
     const isFlexible = next === 'flexible';
 
     if (withTransition) {
+      triggerPageFlipTransition(isFlexible);
       document.documentElement.classList.add('gui-transitioning');
       clearTimeout(guiTransitionTimer);
       guiTransitionTimer = setTimeout(() => {
         document.documentElement.classList.remove('gui-transitioning');
-      }, 480);
+      }, 540);
       playGuiSwitch(isFlexible);
     }
 
@@ -496,9 +518,10 @@
   function applyInspectorMode(mode, withTransition = false) {
     const next = mode === 'tab' ? 'tab' : 'floating';
     if (withTransition) {
+      triggerPageFlipTransition(next === 'tab');
       rootEl.classList.add('gui-transitioning');
       clearTimeout(guiTransitionTimer);
-      guiTransitionTimer = setTimeout(() => rootEl.classList.remove('gui-transitioning'), 480);
+      guiTransitionTimer = setTimeout(() => rootEl.classList.remove('gui-transitioning'), 540);
       playGuiSwitch(next === 'tab');
     }
     rootEl.setAttribute('data-inspector', next);

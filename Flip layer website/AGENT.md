@@ -1144,3 +1144,16 @@ At the end of every prompt where changes are made:
   - `fx.js` (section 4C): `applyInspectorMode('floating'|'tab')` sets `html[data-inspector]`, persists `flippy_v5_inspector_mode`, plays the switch chime + flip transition. In tab mode a capture-phase listener on `#mobileInspectorToggleBtn` overrides the floating toggle and opens it as a tab (`html.inspector-tab-open`); other `.mobile-tab` clicks close it.
   - `styles.css`: larger tall-phone sizing (tabs 58px/11px/21px icons, header buttons 42px, inputs 44px/14px); `data-inspector="tab"` rules render the inspector full-width between top safe area and bottom docks, hide resize/minimize/size controls.
 - **Invariants**: GUI mode (classic/flexible) and Inspector mode (floating/tab) are independent switches; keep both persisted.
+
+
+### 2026-11-12T18:50:45-06:00
+- **Operator Request**: Use StPageFlip / hic-pageflip style page-flip animations when switching GUI designs, fix mobile Flexible GUI scaling, and verify in Chrome at iPhone 14 Pro Max (`430x932`).
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\styles.css`
+  - `C:\Users\jeduc\Downloads\Flippy v5\fx.js`
+- **Specific Adjustments Made**:
+  - Added `.gui-pageflip-sheet` (`flip-forward` / `flip-reverse` 3D `rotateY` + fold lighting/shadow) and `@keyframes guiBookPageEnter` in `styles.css`, triggered via `triggerPageFlipTransition(forward)` in `fx.js` on theme, GUI mode, and Inspector mode switches.
+  - Fixed `.mobile-floating-inspector` overlap measured in `430x932` Chrome inspection by setting `bottom: calc(max(8px, env(safe-area-inset-bottom, 8px)) + 148px)` and `max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 168px)` in `@media (max-width: 860px) and (min-height: 700px)`.
+  - Scoped mobile Flexible GUI (`html[data-gui="flexible"]`) rules to `@media (max-width: 860px)` with full-width `.mobile-tab-inner` / `.module`, `16px` inputs (anti-iOS-zoom), and `44px+` touch targets.
+- **Invariants / Rules to uphold for future turns**:
+  - Keep `.mobile-floating-inspector` `bottom` above the docked `.mobile-header` + `.mobile-tab-bar` (`+ 148px`) on tall phones so it never occludes bottom controls.

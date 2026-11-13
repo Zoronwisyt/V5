@@ -5611,7 +5611,7 @@ input[type="range"]::-moz-range-thumb {
   justify-content: center;
 }
 
-/* Smooth GUI & Theme Switch Flip Tweening (never transform .mobile-shell to avoid fixed/sticky scaling bugs) */
+/* Smooth GUI & Theme Switch: StPageFlip / hic-pageflip Inspired 3D Page Turn */
 #app-main,
 .panel,
 .module,
@@ -5625,49 +5625,104 @@ input[type="range"]::-moz-range-thumb {
     opacity 0.32s ease;
 }
 
-@keyframes guiFlipTween {
+/* 3D Page-Curl Sheet Overlay (nodlik/StPageFlip + bramus/hic-pageflip fold shading) */
+.gui-pageflip-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  will-change: transform, opacity;
+  background: linear-gradient(
+    90deg,
+    rgba(93, 134, 108, 0.20) 0%,
+    rgba(255, 255, 255, 0.14) 18%,
+    rgba(10, 18, 14, 0.42) 52%,
+    rgba(0, 0, 0, 0.58) 100%
+  );
+  box-shadow:
+    inset 18px 0 36px rgba(255, 255, 255, 0.12),
+    -24px 0 60px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(8px) saturate(135%);
+  -webkit-backdrop-filter: blur(8px) saturate(135%);
+}
+
+.gui-pageflip-sheet.flip-forward {
+  transform-origin: left center;
+  animation: stPageFlipForward 0.58s cubic-bezier(0.22, 0.9, 0.32, 1) forwards;
+}
+
+.gui-pageflip-sheet.flip-reverse {
+  transform-origin: right center;
+  background: linear-gradient(
+    270deg,
+    rgba(93, 134, 108, 0.20) 0%,
+    rgba(255, 255, 255, 0.14) 18%,
+    rgba(10, 18, 14, 0.42) 52%,
+    rgba(0, 0, 0, 0.58) 100%
+  );
+  box-shadow:
+    inset -18px 0 36px rgba(255, 255, 255, 0.12),
+    24px 0 60px rgba(0, 0, 0, 0.55);
+  animation: stPageFlipReverse 0.58s cubic-bezier(0.22, 0.9, 0.32, 1) forwards;
+}
+
+@keyframes stPageFlipForward {
   0% {
-    opacity: 1;
-    transform: perspective(1200px) rotateX(0deg) scale(1);
+    opacity: 0.92;
+    transform: perspective(1800px) rotateY(0deg) skewY(0deg);
   }
-  42% {
-    opacity: 0.62;
-    transform: perspective(1200px) rotateX(5deg) scale(0.985);
+  38% {
+    opacity: 0.88;
+    transform: perspective(1800px) rotateY(-58deg) skewY(-2deg);
   }
   100% {
-    opacity: 1;
-    transform: perspective(1200px) rotateX(0deg) scale(1);
+    opacity: 0;
+    transform: perspective(1800px) rotateY(-112deg) skewY(-3.5deg);
   }
 }
 
-@keyframes guiPanelFlipTween {
+@keyframes stPageFlipReverse {
   0% {
-    opacity: 1;
-    transform: perspective(900px) rotateY(0deg);
+    opacity: 0.92;
+    transform: perspective(1800px) rotateY(0deg) skewY(0deg);
   }
-  45% {
-    opacity: 0.65;
-    transform: perspective(900px) rotateY(-4.5deg);
+  38% {
+    opacity: 0.88;
+    transform: perspective(1800px) rotateY(58deg) skewY(2deg);
+  }
+  100% {
+    opacity: 0;
+    transform: perspective(1800px) rotateY(112deg) skewY(3.5deg);
+  }
+}
+
+@keyframes guiBookPageEnter {
+  0% {
+    opacity: 0.55;
+    transform: perspective(1400px) rotateY(9deg);
   }
   100% {
     opacity: 1;
-    transform: perspective(900px) rotateY(0deg);
+    transform: perspective(1400px) rotateY(0deg);
   }
 }
 
 html.gui-transitioning #app-main,
-html.theme-transitioning #app-main {
-  animation: guiFlipTween 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
+html.theme-transitioning #app-main,
 html.gui-transitioning .panel,
 html.theme-transitioning .panel,
 html.gui-transitioning .mobile-tab-content.active .mobile-tab-inner,
 html.theme-transitioning .mobile-tab-content.active .mobile-tab-inner {
-  animation: guiPanelFlipTween 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: guiBookPageEnter 0.52s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .gui-pageflip-sheet {
+    display: none !important;
+  }
   html.gui-transitioning #app-main,
   html.theme-transitioning #app-main,
   html.gui-transitioning .panel,
@@ -5704,8 +5759,8 @@ html[data-gui="flexible"] .mobile-tab-inner {
   padding: 10px;
 }
 
-/* Mobile 9:16 & Portrait Phone Optimization for Flexible GUI (zero shell scaling/overflow) */
-@media (max-width: 860px), (max-aspect-ratio: 3/4) {
+/* Mobile Portrait Phone Optimization for Flexible GUI (zero shell scaling/overflow) */
+@media (max-width: 860px) {
   html[data-gui="flexible"] .mobile-shell {
     padding: 0;
     gap: 0;
@@ -5717,45 +5772,47 @@ html[data-gui="flexible"] .mobile-tab-inner {
 
   html[data-gui="flexible"] .mobile-header {
     padding: max(8px, env(safe-area-inset-top, 8px)) 12px 8px;
-    border-radius: 0;
-    min-height: 48px;
-  }
-
-  html[data-gui="flexible"] .mobile-preview-card {
-    border-radius: 18px;
+    min-height: 52px;
   }
 
   html[data-gui="flexible"] .mobile-tab-bar {
-    gap: 3px;
-    padding: 5px 6px calc(6px + env(safe-area-inset-bottom, 0px));
-  }
-
-  html[data-gui="flexible"] .mobile-tab,
-  html[data-gui="flexible"] .mobile-inspector-pill,
-  html[data-gui="flexible"] .mobile-gui-pill {
-    min-height: 48px;
-    font-size: 10px;
-    padding: 4px 2px;
+    gap: 4px;
+    padding: 6px;
   }
 
   html[data-gui="flexible"] .mobile-tab-inner {
-    gap: 12px;
-    padding: 12px 10px 18px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    gap: 14px;
+    padding: 12px 12px 24px;
   }
 
   html[data-gui="flexible"] .mobile-tab-inner .module,
   html[data-gui="flexible"] .mobile-tab-inner .panel {
-    border-radius: 18px;
-    padding: 12px;
+    width: 100%;
+    box-sizing: border-box;
+    border-radius: 20px;
+    padding: 14px;
+  }
+
+  html[data-gui="flexible"] #mobilePreviewSlot .preview-stage,
+  html[data-gui="flexible"] #mobilePreviewSlot .canvas-wrap {
+    width: 100%;
+    max-width: 100%;
   }
 
   html[data-gui="flexible"] .mobile-tab-inner button,
-  html[data-gui="flexible"] .mobile-tab-inner .btn,
+  html[data-gui="flexible"] .mobile-tab-inner .btn {
+    min-height: 44px;
+    font-size: 14px;
+  }
+
   html[data-gui="flexible"] .mobile-tab-inner select,
   html[data-gui="flexible"] .mobile-tab-inner input[type="text"],
   html[data-gui="flexible"] .mobile-tab-inner input[type="number"] {
-    min-height: 42px;
-    font-size: 13.5px;
+    min-height: 44px;
+    font-size: 16px;
   }
 }
 
@@ -5819,7 +5876,8 @@ html[data-gui="flexible"] .mobile-tab-inner {
   }
 
   .mobile-floating-inspector {
-    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 150px);
+    bottom: calc(max(8px, env(safe-area-inset-bottom, 8px)) + 148px);
+    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 168px);
   }
 }
 
