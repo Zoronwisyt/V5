@@ -1183,3 +1183,15 @@ At the end of every prompt where changes are made:
   - Removed `html[data-gui="flexible"]` layout rules from `styles.css`, keeping the page-flip transition, compact bottom-docked mobile navigation, and Inspector Tab CSS intact.
 - **Invariants / Rules to uphold for future turns**:
   - Keep `data-gui="classic"` locked unless the operator explicitly asks to re-introduce Flexible GUI.
+
+
+### 2026-11-12T19:09:20-06:00
+- **Operator Request**: Eliminate the empty space at the bottom of the iPhone 14 Pro Max screen so the mobile GUI fits edge-to-edge on all screens.
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\styles.css`
+- **Specific Adjustments Made**:
+  - Updated `html, body` and `.mobile-shell` in `@media (max-width: 860px)` to `height: 100dvh; min-height: 100dvh;` (preventing `100%` from falling short of the dynamic viewport).
+  - Anchored `.mobile-tab-bar` flush to `bottom: 0; left: 0; right: 0;` with `padding: 4px 6px max(6px, env(safe-area-inset-bottom, 6px))` and `border-radius: 16px 16px 0 0` so there is no empty ~34px gap below the tab bar on iPhone 14 Pro Max / notched phones.
+  - Aligned `.mobile-header` (`bottom: calc(max(6px, env(safe-area-inset-bottom, 6px)) + 48px)`), `.mobile-tab-content` (`display: flex; flex-direction: column; padding-bottom: +90px`), `.mobile-floating-inspector` (`bottom: +86px`), and `data-inspector="tab"` (`bottom: +86px`) to fill the screen cleanly down to the bottom dock.
+- **Invariants / Rules to uphold for future turns**:
+  - Keep `.mobile-tab-bar` flush at `bottom: 0` using `padding-bottom: max(6px, env(safe-area-inset-bottom, 6px))` instead of `bottom: env(safe-area-inset-bottom)` so no empty strip appears below it.
