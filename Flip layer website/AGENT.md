@@ -1107,3 +1107,18 @@ At the end of every prompt where changes are made:
     - Enlarged `.mobile-tab` (`min-height: 40px`, `12.5px` bold) and interactive controls (`min-height: 42px`, `13.5px`) for comfortable one-handed viewing and tapping.
 - **Invariants / Rules to uphold for future turns**:
   - Keep 9:16 portrait mobile touch targets >= 40px and prevent horizontal overflow in Flexible GUI mode.
+
+
+### 2026-11-12T18:11:25-06:00
+- **Operator Request**: Fix mobile GUI switcher being all the way above the screen and eliminate any GUI scaling errors when switching GUIs on mobile.
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\index.html`
+  - `C:\Users\jeduc\Downloads\Flippy v5\fx.js`
+  - `C:\Users\jeduc\Downloads\Flippy v5\styles.css`
+- **Specific Adjustments Made**:
+  - Added `#mobileBottomGuiModeBtn` (`.mobile-gui-pill` with `#mobileGuiModeLabel`) directly inside `.mobile-tab-bar` at the bottom of the mobile screen in `index.html`, right next to `Inspector` so users don't have to reach to the top of the screen.
+  - Wired `#mobileBottomGuiModeBtn` and `#mobileGuiModeLabel` into `applyGuiMode()` and `toggleGuiMode()` in `fx.js`.
+  - Removed `transform`, `perspective`, `preserve-3d`, `scale`, and `padding` transitions/animations from `.mobile-shell` in `styles.css` so sticky/fixed mobile bars and viewport dimensions never scale or shift; applied `guiPanelFlipTween` only to inner `.panel` and `.mobile-tab-content.active .mobile-tab-inner` containers.
+  - Added `.mobile-gui-pill` styling and locked `.mobile-shell` to `100% / 100dvh` with `padding: 0` in `html[data-gui="flexible"]` mobile media query (`@media (max-width: 860px), (max-aspect-ratio: 3/4)`).
+- **Invariants / Rules to uphold for future turns**:
+  - Never apply CSS `transform`, `perspective`, `scale`, or `transform-style: preserve-3d` to `.mobile-shell`, as it breaks `position: sticky` / `position: fixed` and causes mobile viewport scaling bugs.

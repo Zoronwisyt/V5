@@ -407,7 +407,9 @@
   // ==========================================================================
   const guiModeToggleBtn = document.getElementById('guiModeToggleBtn');
   const mobileGuiModeToggleBtn = document.getElementById('mobileGuiModeToggleBtn');
+  const mobileBottomGuiModeBtn = document.getElementById('mobileBottomGuiModeBtn');
   const guiModeLabel = document.getElementById('guiModeLabel');
+  const mobileGuiModeLabel = document.getElementById('mobileGuiModeLabel');
   let guiTransitionTimer = null;
 
   function playGuiSwitch(isFlexible) {
@@ -452,7 +454,9 @@
 
     if (guiModeToggleBtn) guiModeToggleBtn.classList.toggle('active', isFlexible);
     if (mobileGuiModeToggleBtn) mobileGuiModeToggleBtn.classList.toggle('active', isFlexible);
+    if (mobileBottomGuiModeBtn) mobileBottomGuiModeBtn.classList.toggle('active', isFlexible);
     if (guiModeLabel) guiModeLabel.textContent = isFlexible ? 'Flexible' : 'Classic';
+    if (mobileGuiModeLabel) mobileGuiModeLabel.textContent = isFlexible ? 'Flexible' : 'Classic';
   }
 
   function toggleGuiMode() {
@@ -462,6 +466,7 @@
 
   if (guiModeToggleBtn) guiModeToggleBtn.addEventListener('click', toggleGuiMode);
   if (mobileGuiModeToggleBtn) mobileGuiModeToggleBtn.addEventListener('click', toggleGuiMode);
+  if (mobileBottomGuiModeBtn) mobileBottomGuiModeBtn.addEventListener('click', toggleGuiMode);
   applyGuiMode(localStorage.getItem('flippy_v5_gui_mode') || 'classic', false);
 
   // ==========================================================================

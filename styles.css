@@ -4365,7 +4365,8 @@ input[type="range"]::-moz-range-thumb {
   }
 
   .mobile-tab,
-  .mobile-inspector-pill {
+  .mobile-inspector-pill,
+  .mobile-gui-pill {
     min-height: 50px;
     padding: 4px 2px;
     border: 1px solid transparent;
@@ -4396,13 +4397,15 @@ input[type="range"]::-moz-range-thumb {
     stroke: var(--accent);
   }
 
-  .mobile-inspector-pill.active {
+  .mobile-inspector-pill.active,
+  .mobile-gui-pill.active {
     color: var(--accent);
     background: var(--accent-soft);
     border-color: rgba(var(--accent-rgb), 0.45);
   }
 
-  .mobile-inspector-pill.active svg {
+  .mobile-inspector-pill.active svg,
+  .mobile-gui-pill.active svg {
     stroke: var(--accent);
   }
 
@@ -5608,11 +5611,11 @@ input[type="range"]::-moz-range-thumb {
   justify-content: center;
 }
 
-/* Smooth GUI & Theme Switch Flip Tweening */
+/* Smooth GUI & Theme Switch Flip Tweening (never transform .mobile-shell to avoid fixed/sticky scaling bugs) */
 #app-main,
-.mobile-shell,
 .panel,
-.module {
+.module,
+.mobile-tab-inner {
   transition:
     grid-template-columns 0.45s cubic-bezier(0.22, 1, 0.36, 1),
     gap 0.42s cubic-bezier(0.22, 1, 0.36, 1),
@@ -5620,7 +5623,6 @@ input[type="range"]::-moz-range-thumb {
     border-radius 0.38s cubic-bezier(0.22, 1, 0.36, 1),
     transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
     opacity 0.32s ease;
-  transform-style: preserve-3d;
 }
 
 @keyframes guiFlipTween {
@@ -5629,8 +5631,8 @@ input[type="range"]::-moz-range-thumb {
     transform: perspective(1200px) rotateX(0deg) scale(1);
   }
   42% {
-    opacity: 0.58;
-    transform: perspective(1200px) rotateX(6deg) scale(0.978);
+    opacity: 0.62;
+    transform: perspective(1200px) rotateX(5deg) scale(0.985);
   }
   100% {
     opacity: 1;
@@ -5641,37 +5643,37 @@ input[type="range"]::-moz-range-thumb {
 @keyframes guiPanelFlipTween {
   0% {
     opacity: 1;
-    transform: perspective(900px) rotateY(0deg) scale(1);
+    transform: perspective(900px) rotateY(0deg);
   }
   45% {
     opacity: 0.65;
-    transform: perspective(900px) rotateY(-4.5deg) scale(0.982);
+    transform: perspective(900px) rotateY(-4.5deg);
   }
   100% {
     opacity: 1;
-    transform: perspective(900px) rotateY(0deg) scale(1);
+    transform: perspective(900px) rotateY(0deg);
   }
 }
 
 html.gui-transitioning #app-main,
-html.gui-transitioning .mobile-shell,
-html.theme-transitioning #app-main,
-html.theme-transitioning .mobile-shell {
+html.theme-transitioning #app-main {
   animation: guiFlipTween 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 html.gui-transitioning .panel,
-html.theme-transitioning .panel {
+html.theme-transitioning .panel,
+html.gui-transitioning .mobile-tab-content.active .mobile-tab-inner,
+html.theme-transitioning .mobile-tab-content.active .mobile-tab-inner {
   animation: guiPanelFlipTween 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
   html.gui-transitioning #app-main,
-  html.gui-transitioning .mobile-shell,
   html.theme-transitioning #app-main,
-  html.theme-transitioning .mobile-shell,
   html.gui-transitioning .panel,
-  html.theme-transitioning .panel {
+  html.theme-transitioning .panel,
+  html.gui-transitioning .mobile-tab-content.active .mobile-tab-inner,
+  html.theme-transitioning .mobile-tab-content.active .mobile-tab-inner {
     animation: none;
   }
 }
@@ -5702,37 +5704,38 @@ html[data-gui="flexible"] .mobile-tab-inner {
   padding: 10px;
 }
 
-/* Mobile 9:16 & Portrait Phone Optimization for Flexible GUI */
-@media (max-width: 900px), (max-aspect-ratio: 3/4) {
+/* Mobile 9:16 & Portrait Phone Optimization for Flexible GUI (zero shell scaling/overflow) */
+@media (max-width: 860px), (max-aspect-ratio: 3/4) {
   html[data-gui="flexible"] .mobile-shell {
-    padding: 8px 10px calc(12px + env(safe-area-inset-bottom, 0px));
-    gap: 10px;
+    padding: 0;
+    gap: 0;
+    width: 100%;
+    max-width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
   }
 
   html[data-gui="flexible"] .mobile-header {
-    padding: 8px 12px;
-    border-radius: 18px;
-    min-height: 52px;
+    padding: max(8px, env(safe-area-inset-top, 8px)) 12px 8px;
+    border-radius: 0;
+    min-height: 48px;
   }
 
   html[data-gui="flexible"] .mobile-preview-card {
-    border-radius: 20px;
-    min-height: clamp(200px, 30vh, 300px);
-    max-height: 36vh;
+    border-radius: 18px;
   }
 
   html[data-gui="flexible"] .mobile-tab-bar {
-    gap: 6px;
-    padding: 5px;
-    border-radius: 16px;
+    gap: 3px;
+    padding: 5px 6px calc(6px + env(safe-area-inset-bottom, 0px));
   }
 
-  html[data-gui="flexible"] .mobile-tab {
-    min-height: 40px;
-    font-size: 12.5px;
-    font-weight: 600;
-    border-radius: 12px;
-    padding: 6px 8px;
+  html[data-gui="flexible"] .mobile-tab,
+  html[data-gui="flexible"] .mobile-inspector-pill,
+  html[data-gui="flexible"] .mobile-gui-pill {
+    min-height: 48px;
+    font-size: 10px;
+    padding: 4px 2px;
   }
 
   html[data-gui="flexible"] .mobile-tab-inner {
