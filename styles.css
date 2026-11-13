@@ -5762,7 +5762,7 @@ html[data-gui="flexible"] .mobile-tab-inner {
 /* Mobile Portrait Phone Optimization for Flexible GUI (zero shell scaling/overflow) */
 @media (max-width: 860px) {
   html[data-gui="flexible"] .mobile-shell {
-    padding: 0;
+    padding: env(safe-area-inset-top, 0px) 0 0 0;
     gap: 0;
     width: 100%;
     max-width: 100vw;
@@ -5770,30 +5770,20 @@ html[data-gui="flexible"] .mobile-tab-inner {
     max-height: 100dvh;
   }
 
-  html[data-gui="flexible"] .mobile-header {
-    padding: max(8px, env(safe-area-inset-top, 8px)) 12px 8px;
-    min-height: 52px;
-  }
-
-  html[data-gui="flexible"] .mobile-tab-bar {
-    gap: 4px;
-    padding: 6px;
-  }
-
   html[data-gui="flexible"] .mobile-tab-inner {
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
-    gap: 14px;
-    padding: 12px 12px 24px;
+    gap: 12px;
+    padding: 10px 10px 18px;
   }
 
   html[data-gui="flexible"] .mobile-tab-inner .module,
   html[data-gui="flexible"] .mobile-tab-inner .panel {
     width: 100%;
     box-sizing: border-box;
-    border-radius: 20px;
-    padding: 14px;
+    border-radius: 18px;
+    padding: 12px;
   }
 
   html[data-gui="flexible"] #mobilePreviewSlot .preview-stage,
@@ -5804,14 +5794,14 @@ html[data-gui="flexible"] .mobile-tab-inner {
 
   html[data-gui="flexible"] .mobile-tab-inner button,
   html[data-gui="flexible"] .mobile-tab-inner .btn {
-    min-height: 44px;
-    font-size: 14px;
+    min-height: 40px;
+    font-size: 13.5px;
   }
 
   html[data-gui="flexible"] .mobile-tab-inner select,
   html[data-gui="flexible"] .mobile-tab-inner input[type="text"],
   html[data-gui="flexible"] .mobile-tab-inner input[type="number"] {
-    min-height: 44px;
+    min-height: 40px;
     font-size: 16px;
   }
 }
@@ -5820,29 +5810,48 @@ html[data-gui="flexible"] .mobile-tab-inner {
 
 
 /* ==========================================================================
-   Tall Phone Reachability (iPhone 14 Pro Max & similar 9:19.5 / 9:16)
-   - Tab bar forced into ONE row (no wrapping that pushed controls upward)
-   - Header controls (Sound / GUI / Theme / Export) docked just above the
-     bottom tab bar so they're thumb-reachable in both Classic & Flexible
+   Compact Bottom-Docked Mobile Navigation & Slim Utility Controls
+   - Moves tabs + GUI/utility strip all the way to the bottom edge of screen
+   - Keeps Volume / GUI / Inspector / Theme buttons compact (28px) so full
+     screen preview and workspace remain unobstructed
    ========================================================================== */
-@media (max-width: 860px) and (min-height: 700px) {
+@media (max-width: 860px) {
+  .mobile-shell {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
   .mobile-tab-bar {
+    position: fixed;
+    left: 6px;
+    right: 6px;
+    bottom: max(2px, env(safe-area-inset-bottom, 2px));
     grid-template-columns: none;
     grid-auto-flow: column;
     grid-auto-columns: minmax(0, 1fr);
-    gap: 4px;
-    padding: 5px;
+    gap: 3px;
+    padding: 3px 4px;
+    border-radius: 14px;
   }
 
   .mobile-tab,
   .mobile-inspector-pill,
   .mobile-gui-pill {
-    min-height: 50px;
+    min-height: 40px;
     font-size: 9.5px;
-    padding: 4px 1px;
+    gap: 2px;
+    padding: 3px 1px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    border-radius: 10px;
+  }
+
+  .mobile-tab svg,
+  .mobile-inspector-pill svg,
+  .mobile-gui-pill svg {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
   }
 
   .mobile-tab span,
@@ -5855,104 +5864,67 @@ html[data-gui="flexible"] .mobile-tab-inner {
 
   html .mobile-shell .mobile-header {
     position: fixed;
-    top: auto;
-    left: 10px;
-    right: 10px;
-    bottom: calc(max(8px, env(safe-area-inset-bottom, 8px)) + 70px);
+    top: auto !important;
+    left: 6px;
+    right: 6px;
+    bottom: calc(max(2px, env(safe-area-inset-bottom, 2px)) + 48px);
     z-index: 199;
-    min-height: 48px;
-    padding: 6px 10px;
+    min-height: 34px;
+    padding: 3px 8px;
+    gap: 6px;
     border: 1px solid var(--glass-border-mid, rgba(255, 255, 255, 0.14));
-    border-radius: 18px;
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+    border-radius: 12px;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.42);
   }
 
-  .mobile-shell {
-    padding-top: env(safe-area-inset-top, 0px);
+  .mobile-logo > span {
+    font-size: 13px;
   }
 
-  .mobile-tab-content {
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 140px) !important;
-  }
-
-  .mobile-floating-inspector {
-    bottom: calc(max(8px, env(safe-area-inset-bottom, 8px)) + 148px);
-    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 168px);
-  }
-}
-
-
-/* ==========================================================================
-   iPhone 14 Pro Max readability: larger tab bar, header dock & controls
-   ========================================================================== */
-@media (max-width: 860px) and (min-height: 700px) {
-  .mobile-tab,
-  .mobile-inspector-pill,
-  .mobile-gui-pill {
-    min-height: 58px;
-    font-size: 11px;
+  .mobile-header-right {
     gap: 4px;
-  }
-
-  .mobile-tab svg,
-  .mobile-inspector-pill svg,
-  .mobile-gui-pill svg {
-    width: 21px;
-    height: 21px;
-  }
-
-  html .mobile-shell .mobile-header {
-    bottom: calc(max(8px, env(safe-area-inset-bottom, 8px)) + 80px);
-    min-height: 56px;
   }
 
   .mobile-header .sound-toggle-btn.small,
   .mobile-header .gui-mode-btn.small,
   .mobile-header .theme-switch-btn.small {
-    width: 42px;
-    height: 42px;
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
+    padding: 0;
+    border-radius: 8px;
   }
 
   .mobile-header .gui-mode-btn.small svg,
   .mobile-header .sound-toggle-btn.small svg,
   .mobile-header .theme-switch-btn.small svg {
-    width: 18px;
-    height: 18px;
+    width: 13px;
+    height: 13px;
   }
 
   .mobile-header-dl-btn {
-    min-height: 42px;
-    font-size: 13px;
-  }
-
-  .mobile-header-right {
-    gap: 6px;
+    height: 28px;
+    min-height: 28px;
+    padding: 0 8px;
+    font-size: 11px;
+    border-radius: 8px;
+    gap: 4px;
+    white-space: nowrap;
   }
 
   .mobile-tab-content {
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 160px) !important;
+    padding-bottom: calc(max(2px, env(safe-area-inset-bottom, 2px)) + 92px) !important;
   }
 
-  .mobile-tab-inner,
-  .mfi-body {
-    font-size: 14px;
-  }
-
-  .mobile-tab-inner label,
-  .mfi-body label {
-    font-size: 13px;
-  }
-
-  .mobile-tab-inner button,
-  .mobile-tab-inner select,
-  .mobile-tab-inner input:not([type="range"]):not([type="checkbox"]):not([type="radio"]),
-  .mfi-body button,
-  .mfi-body select,
-  .mfi-body input:not([type="range"]):not([type="checkbox"]):not([type="radio"]) {
-    min-height: 44px;
-    font-size: 14px;
+  .mobile-floating-inspector {
+    bottom: calc(max(2px, env(safe-area-inset-bottom, 2px)) + 88px);
+    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 100px);
   }
 }
+
+
+
 
 /* ==========================================================================
    Inspector as its own TAB (data-inspector="tab")
@@ -5972,7 +5944,7 @@ html[data-inspector="tab"].inspector-tab-open .mobile-floating-inspector {
   top: env(safe-area-inset-top, 0px) !important;
   left: 0 !important;
   right: 0 !important;
-  bottom: calc(max(8px, env(safe-area-inset-bottom, 8px)) + 150px) !important;
+  bottom: calc(max(2px, env(safe-area-inset-bottom, 2px)) + 88px) !important;
   width: auto !important;
   height: auto !important;
   max-height: none !important;

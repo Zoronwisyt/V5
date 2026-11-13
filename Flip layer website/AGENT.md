@@ -1157,3 +1157,15 @@ At the end of every prompt where changes are made:
   - Scoped mobile Flexible GUI (`html[data-gui="flexible"]`) rules to `@media (max-width: 860px)` with full-width `.mobile-tab-inner` / `.module`, `16px` inputs (anti-iOS-zoom), and `44px+` touch targets.
 - **Invariants / Rules to uphold for future turns**:
   - Keep `.mobile-floating-inspector` `bottom` above the docked `.mobile-header` + `.mobile-tab-bar` (`+ 148px`) on tall phones so it never occludes bottom controls.
+
+
+### 2026-11-12T18:57:47-06:00
+- **Operator Request**: Shrink the oversized Volume / GUI / Theme utility buttons on mobile and move the tab bar + GUI utility strip all the way to the very bottom so the phone screen stays maximally visible.
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\styles.css`
+- **Specific Adjustments Made**:
+  - Reduced `.mobile-header` utility icon buttons (`.sound-toggle-btn.small`, `.gui-mode-btn.small`, `.theme-switch-btn.small`) from `42px` to `28px × 28px` (`13px` SVG icons) and `.mobile-header-dl-btn` to `28px` height (`11px` font).
+  - Compacted `.mobile-tab-bar` (`bottom: max(2px, env(safe-area-inset-bottom, 2px))`, `min-height: 40px`, `9.5px` text, `15px` icons) and slimmed `.mobile-header` (`bottom: +48px`, `min-height: 34px`, removed the accidental `env(safe-area-inset-top)` padding on bottom-docked Flexible header).
+  - Adjusted `.mobile-tab-content` bottom padding (`+92px`), `.mobile-floating-inspector` (`bottom: +88px`), and `data-inspector="tab"` (`bottom: +88px`) so the full workspace above the sleek ~86px bottom dock stays unobstructed.
+- **Invariants / Rules to uphold for future turns**:
+  - Keep bottom mobile utility buttons compact (`28px`) and never apply `env(safe-area-inset-top)` to a bottom-docked `.mobile-header`.
