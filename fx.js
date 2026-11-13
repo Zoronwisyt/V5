@@ -424,23 +424,20 @@
   });
 
   // ==========================================================================
-  // 4B. GUI MODE SWITCHER (CLASSIC vs FLEXIBLE) + SMOOTH TRANSITION & SFX
+  // 4B. CLASSIC GUI LOCK + TRANSITION SFX HELPER
   // ==========================================================================
-  const guiModeToggleBtn = document.getElementById('guiModeToggleBtn');
-  const mobileGuiModeToggleBtn = document.getElementById('mobileGuiModeToggleBtn');
-  const mobileBottomGuiModeBtn = document.getElementById('mobileBottomGuiModeBtn');
-  const guiModeLabel = document.getElementById('guiModeLabel');
-  const mobileGuiModeLabel = document.getElementById('mobileGuiModeLabel');
   let guiTransitionTimer = null;
+  document.documentElement.setAttribute('data-gui', 'classic');
+  localStorage.removeItem('flippy_v5_gui_mode');
 
-  function playGuiSwitch(isFlexible) {
+  function playGuiSwitch(isForward) {
     if (localStorage.getItem('flippy_sfx_enabled') === 'false') return;
     try {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (!AudioCtx) return;
       const ctx = new AudioCtx();
       const now = ctx.currentTime;
-      const freqs = isFlexible ? [440, 587.33] : [587.33, 440];
+      const freqs = isForward ? [440, 587.33] : [587.33, 440];
       freqs.forEach((freq, idx) => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
@@ -456,40 +453,6 @@
       });
     } catch (e) {}
   }
-
-  function applyGuiMode(mode, withTransition = false) {
-    const next = mode === 'flexible' ? 'flexible' : 'classic';
-    const isFlexible = next === 'flexible';
-
-    if (withTransition) {
-      triggerPageFlipTransition(isFlexible);
-      document.documentElement.classList.add('gui-transitioning');
-      clearTimeout(guiTransitionTimer);
-      guiTransitionTimer = setTimeout(() => {
-        document.documentElement.classList.remove('gui-transitioning');
-      }, 540);
-      playGuiSwitch(isFlexible);
-    }
-
-    document.documentElement.setAttribute('data-gui', next);
-    localStorage.setItem('flippy_v5_gui_mode', next);
-
-    if (guiModeToggleBtn) guiModeToggleBtn.classList.toggle('active', isFlexible);
-    if (mobileGuiModeToggleBtn) mobileGuiModeToggleBtn.classList.toggle('active', isFlexible);
-    if (mobileBottomGuiModeBtn) mobileBottomGuiModeBtn.classList.toggle('active', isFlexible);
-    if (guiModeLabel) guiModeLabel.textContent = isFlexible ? 'Flexible' : 'Classic';
-    if (mobileGuiModeLabel) mobileGuiModeLabel.textContent = isFlexible ? 'Flexible' : 'Classic';
-  }
-
-  function toggleGuiMode() {
-    const cur = document.documentElement.getAttribute('data-gui') || 'classic';
-    applyGuiMode(cur === 'classic' ? 'flexible' : 'classic', true);
-  }
-
-  if (guiModeToggleBtn) guiModeToggleBtn.addEventListener('click', toggleGuiMode);
-  if (mobileGuiModeToggleBtn) mobileGuiModeToggleBtn.addEventListener('click', toggleGuiMode);
-  if (mobileBottomGuiModeBtn) mobileBottomGuiModeBtn.addEventListener('click', toggleGuiMode);
-  applyGuiMode(localStorage.getItem('flippy_v5_gui_mode') || 'classic', false);
 
   // ==========================================================================
   // 4C. INSPECTOR LAYOUT SWITCH (FLOATING vs OWN TAB) - mobile

@@ -1169,3 +1169,17 @@ At the end of every prompt where changes are made:
   - Adjusted `.mobile-tab-content` bottom padding (`+92px`), `.mobile-floating-inspector` (`bottom: +88px`), and `data-inspector="tab"` (`bottom: +88px`) so the full workspace above the sleek ~86px bottom dock stays unobstructed.
 - **Invariants / Rules to uphold for future turns**:
   - Keep bottom mobile utility buttons compact (`28px`) and never apply `env(safe-area-inset-top)` to a bottom-docked `.mobile-header`.
+
+
+### 2026-11-12T19:01:17-06:00
+- **Operator Request**: Remove the Classic ↔ Flexible GUI switching feature and buttons, keeping Classic GUI active for now.
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\index.html`
+  - `C:\Users\jeduc\Downloads\Flippy v5\fx.js`
+  - `C:\Users\jeduc\Downloads\Flippy v5\styles.css`
+- **Specific Adjustments Made**:
+  - Removed `#guiModeToggleBtn`, `#mobileGuiModeToggleBtn`, and `#mobileBottomGuiModeBtn` from `index.html` (kept `#mobileInspectorModeBtn` for Floating ↔ Tab Inspector switching).
+  - Removed `applyGuiMode`, `toggleGuiMode`, and `flippy_v5_gui_mode` toggling in `fx.js`, locking `data-gui` to `"classic"` and clearing any stored `flippy_v5_gui_mode`, while preserving `triggerPageFlipTransition` and `playGuiSwitch` for Theme & Inspector Mode switches.
+  - Removed `html[data-gui="flexible"]` layout rules from `styles.css`, keeping the page-flip transition, compact bottom-docked mobile navigation, and Inspector Tab CSS intact.
+- **Invariants / Rules to uphold for future turns**:
+  - Keep `data-gui="classic"` locked unless the operator explicitly asks to re-introduce Flexible GUI.
