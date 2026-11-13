@@ -5760,3 +5760,65 @@ html[data-gui="flexible"] .mobile-tab-inner {
 }
 
 
+
+
+/* ==========================================================================
+   Tall Phone Reachability (iPhone 14 Pro Max & similar 9:19.5 / 9:16)
+   - Tab bar forced into ONE row (no wrapping that pushed controls upward)
+   - Header controls (Sound / GUI / Theme / Export) docked just above the
+     bottom tab bar so they're thumb-reachable in both Classic & Flexible
+   ========================================================================== */
+@media (max-width: 860px) and (min-height: 700px) {
+  .mobile-tab-bar {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: 4px;
+    padding: 5px;
+  }
+
+  .mobile-tab,
+  .mobile-inspector-pill,
+  .mobile-gui-pill {
+    min-height: 50px;
+    font-size: 9.5px;
+    padding: 4px 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mobile-tab span,
+  .mobile-inspector-pill span,
+  .mobile-gui-pill span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  html .mobile-shell .mobile-header {
+    position: fixed;
+    top: auto;
+    left: 10px;
+    right: 10px;
+    bottom: calc(max(8px, env(safe-area-inset-bottom, 8px)) + 70px);
+    z-index: 199;
+    min-height: 48px;
+    padding: 6px 10px;
+    border: 1px solid var(--glass-border-mid, rgba(255, 255, 255, 0.14));
+    border-radius: 18px;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+  }
+
+  .mobile-shell {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .mobile-tab-content {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 140px) !important;
+  }
+
+  .mobile-floating-inspector {
+    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 150px);
+  }
+}

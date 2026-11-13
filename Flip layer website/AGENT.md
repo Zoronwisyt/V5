@@ -1122,3 +1122,15 @@ At the end of every prompt where changes are made:
   - Added `.mobile-gui-pill` styling and locked `.mobile-shell` to `100% / 100dvh` with `padding: 0` in `html[data-gui="flexible"]` mobile media query (`@media (max-width: 860px), (max-aspect-ratio: 3/4)`).
 - **Invariants / Rules to uphold for future turns**:
   - Never apply CSS `transform`, `perspective`, `scale`, or `transform-style: preserve-3d` to `.mobile-shell`, as it breaks `position: sticky` / `position: fixed` and causes mobile viewport scaling bugs.
+
+
+### 2026-11-12T18:16:30-06:00
+- **Operator Request**: On iPhone 14 Pro Max, controls are too high up to press when switching GUI.
+- **Files Modified**: `C:\Users\jeduc\Downloads\Flippy v5\styles.css`
+- **Specific Adjustments Made**:
+  - Added `@media (max-width: 860px) and (min-height: 700px)` block at end of `styles.css`:
+    - `.mobile-tab-bar` forced into a single row (`grid-auto-flow: column`) — the extra GUI pill had caused 3-column wrapping into multiple rows, pushing controls upward.
+    - `.mobile-header` (Sound / GUI / Theme / Export) docked as a floating glass bar fixed just above the bottom tab bar for thumb reach, in both Classic and Flexible modes.
+    - `.mobile-tab-content` bottom padding (`140px + safe-area`) and `.mobile-floating-inspector` max-height cap so nothing hides behind the docked bars.
+- **Invariants / Rules to uphold for future turns**:
+  - On tall phones, all primary controls must live in the bottom thumb zone; keep tab bar to one row.
