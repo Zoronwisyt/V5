@@ -5760,15 +5760,16 @@ html.theme-transitioning .mobile-tab-content.active .mobile-tab-inner {
 
   .mobile-tab-bar {
     position: fixed;
-    left: 8px;
-    right: 8px;
-    bottom: max(8px, env(safe-area-inset-bottom, 8px));
+    left: 0;
+    right: 0;
+    bottom: 0;
     grid-template-columns: none;
     grid-auto-flow: column;
     grid-auto-columns: minmax(0, 1fr);
     gap: 2px;
-    padding: 4px;
-    border-radius: 999px;
+    padding: 6px 8px max(8px, env(safe-area-inset-bottom, 8px));
+    border-radius: 20px 20px 0 0;
+    border-bottom: none;
     overflow: hidden;
   }
 
@@ -5806,7 +5807,7 @@ html.theme-transitioning .mobile-tab-content.active .mobile-tab-inner {
     top: auto !important;
     left: 6px;
     right: 6px;
-    bottom: calc(max(8px, env(safe-area-inset-bottom, 8px)) + 54px);
+    bottom: calc(max(8px, env(safe-area-inset-bottom, 8px)) + 58px);
     z-index: 199;
     min-height: 34px;
     padding: 3px 8px;
@@ -5853,12 +5854,12 @@ html.theme-transitioning .mobile-tab-content.active .mobile-tab-inner {
   }
 
   .mobile-tab-content {
-    padding-bottom: calc(max(6px, env(safe-area-inset-bottom, 6px)) + 90px) !important;
+    padding-bottom: calc(max(8px, env(safe-area-inset-bottom, 8px)) + 100px) !important;
   }
 
   .mobile-floating-inspector {
-    bottom: calc(max(6px, env(safe-area-inset-bottom, 6px)) + 86px);
-    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - max(6px, env(safe-area-inset-bottom, 6px)) - 96px);
+    bottom: calc(max(8px, env(safe-area-inset-bottom, 8px)) + 96px);
+    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - max(8px, env(safe-area-inset-bottom, 8px)) - 104px);
   }
 }
 

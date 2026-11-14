@@ -1302,6 +1302,7 @@
 
   function cloneGroupForRange(sourceGroup, targetStartMs, targetEndMs, usedIds) {
     const clone = sourceGroup.cloneNode(true);
+    const isEmbedScene = sourceGroup.tagName.toLowerCase() === 'embedscene';
     const origStart = Number(sourceGroup.getAttribute('startTime') || 0);
     const origEnd = Number(sourceGroup.getAttribute('endTime') || (origStart + 1000));
     const origDur = Math.max(1, origEnd - origStart);
@@ -1312,22 +1313,34 @@
     clone.setAttribute('id', nextUniqueId(usedIds));
     clone.setAttribute('startTime', String(tStart));
     clone.setAttribute('endTime', String(tEnd));
+    if (isEmbedScene && clone.hasAttribute('outTime')) {
+      clone.setAttribute('outTime', String(tDur));
+    }
     const baseLabel = sourceGroup.getAttribute('label') || `Group ${sourceGroup.getAttribute('id') || ''}`;
     clone.setAttribute('label', `${baseLabel} (Copy)`);
 
-    clone.querySelectorAll('[startTime], [endTime], [id]').forEach((child) => {
-      if (child.hasAttribute('id')) child.setAttribute('id', nextUniqueId(usedIds));
-      if (child.hasAttribute('startTime')) {
-        const cs = Number(child.getAttribute('startTime') || origStart);
-        const mapped = tStart + ((cs - origStart) / origDur) * tDur;
-        child.setAttribute('startTime', String(Math.round(Math.max(tStart, Math.min(tEnd, mapped)))));
-      }
-      if (child.hasAttribute('endTime')) {
-        const ce = Number(child.getAttribute('endTime') || origEnd);
-        const mapped = tStart + ((ce - origStart) / origDur) * tDur;
-        child.setAttribute('endTime', String(Math.round(Math.max(tStart + 1, Math.min(tEnd, mapped)))));
+    clone.querySelectorAll('[id]').forEach((child) => {
+      if (child.tagName.toLowerCase() === 'effect') return;
+      const rawId = child.getAttribute('id');
+      if (rawId && /^\d+$/.test(rawId.trim())) {
+        child.setAttribute('id', nextUniqueId(usedIds));
       }
     });
+
+    if (!isEmbedScene) {
+      clone.querySelectorAll('[startTime], [endTime]').forEach((child) => {
+        if (child.hasAttribute('startTime')) {
+          const cs = Number(child.getAttribute('startTime') || origStart);
+          const mapped = tStart + ((cs - origStart) / origDur) * tDur;
+          child.setAttribute('startTime', String(Math.round(Math.max(tStart, Math.min(tEnd, mapped)))));
+        }
+        if (child.hasAttribute('endTime')) {
+          const ce = Number(child.getAttribute('endTime') || origEnd);
+          const mapped = tStart + ((ce - origStart) / origDur) * tDur;
+          child.setAttribute('endTime', String(Math.round(Math.max(tStart + 1, Math.min(tEnd, mapped)))));
+        }
+      });
+    }
     return clone;
   }
 
@@ -1381,7 +1394,9 @@
       }))
       .sort((a, b) => a.t - b.t);
 
-    xbGroups = Array.from(scene.querySelectorAll('group'));
+    xbGroups = Array.from(scene.children).filter((el) =>
+      ['group', 'embedscene'].includes(el.tagName.toLowerCase())
+    );
     const maxBookmarkT = xbBookmarks.length ? xbBookmarks[xbBookmarks.length - 1].t : 0;
     const maxGroupEnd = xbGroups.reduce((m, g) => Math.max(m, Number(g.getAttribute('endTime') || 0)), 0);
     xbTotalMs = Math.max(Number(scene.getAttribute('totalTime') || 5000), maxBookmarkT, maxGroupEnd, 1000);
@@ -1449,7 +1464,7 @@
         }).join('');
         xbGroupSelect.disabled = false;
       } else {
-        xbGroupSelect.innerHTML = '<option value="">No &lt;group&gt; elements found</option>';
+        xbGroupSelect.innerHTML = '<option value="">No &lt;group&gt; or &lt;embedScene&gt; elements found</option>';
         xbGroupSelect.disabled = true;
       }
     }
@@ -1482,10 +1497,10 @@
       });
     }
 
-    // Alight Motion Style Layer Rows (Groups, Shapes, Text, Media + Keyframe Diamonds)
+    // Alight Motion Style Layer Rows (Groups, EmbedScenes, Shapes, Text, Media + Keyframe Diamonds)
     if (xbGroupsTrack) {
       const layerEls = Array.from(scene.children).filter((el) =>
-        ['group', 'shape', 'text', 'media', 'image', 'video', 'nullobj'].includes(el.tagName.toLowerCase())
+        ['group', 'embedscene', 'shape', 'text', 'media', 'image', 'video', 'nullobj'].includes(el.tagName.toLowerCase())
       );
       if (!layerEls.length) {
         xbGroupsTrack.innerHTML = '<div class="xmlbeat-empty">No timeline layers found in this XML.</div>';
@@ -1493,7 +1508,7 @@
         xbGroupsTrack.innerHTML = '';
         layerEls.forEach((layerEl, idx) => {
           const tag = layerEl.tagName.toLowerCase();
-          const typeClass = tag === 'group' ? 'group' : tag === 'text' ? 'text' : (tag === 'media' || tag === 'image' || tag === 'video') ? 'media' : 'shape';
+          const typeClass = (tag === 'group' || tag === 'embedscene') ? 'group' : tag === 'text' ? 'text' : (tag === 'media' || tag === 'image' || tag === 'video') ? 'media' : 'shape';
           const iconGlyph = typeClass === 'group' ? '↗' : typeClass === 'text' ? 'T' : typeClass === 'media' ? '▣' : '✦';
           const ls = Number(layerEl.getAttribute('startTime') || 0);
           const le = Number(layerEl.getAttribute('endTime') || (ls + 500));
@@ -1882,7 +1897,9 @@
       const b2 = xbBookmarks[startBeatIdx + 1].t;
       const b3 = xbBookmarks[startBeatIdx + 2].t;
       if (b2 > b1 && b3 > b2) {
-        return { catStart: b1, catEnd: b2, winStart: b2, winEnd: b3 };
+        const catEnd = (b2 - b1 > 20) ? (b2 - 1) : b2;
+        const winEnd = (b3 - b2 > 20) ? (b3 - 1) : b3;
+        return { catStart: b1, catEnd, winStart: b2, winEnd };
       }
     }
     const mid = Math.round((s + e) / 2);
@@ -2007,23 +2024,34 @@
       const winSrc = xbGroups[Number(vsWinGroupSel ? vsWinGroupSel.value : 0)];
       if (!scene || !catSrc || !winSrc) return;
 
+      const rawStartIdx = Number(vsCatStartBeat && vsCatStartBeat.value);
+      const rawEndIdx = Number(vsWinEndBeat && vsWinEndBeat.value);
+      const startIdx = Number.isFinite(rawStartIdx) ? Math.max(0, Math.min(xbBookmarks.length - 2, rawStartIdx)) : 0;
+      const endIdx = (Number.isFinite(rawEndIdx) && rawEndIdx > startIdx)
+        ? Math.min(xbBookmarks.length - 1, rawEndIdx)
+        : (xbBookmarks.length - 1);
+
       const usedIds = collectUsedIds(scene);
-      let pairs = 0;
-      for (let i = 0; i < xbBookmarks.length - 1; i += 1) {
+      let placed = 0;
+      let step = 0;
+      for (let i = startIdx; i < endIdx; i += 1) {
         const t1 = xbBookmarks[i].t;
         const t2 = xbBookmarks[i + 1].t;
         if (t2 <= t1) continue;
-        const mid = Math.round((t1 + t2) / 2);
-        const catClone = cloneGroupForRange(catSrc, t1, mid, usedIds);
-        catClone.setAttribute('label', `${catSrc.getAttribute('label') || 'Category'} #${i + 1}`);
-        const winClone = cloneGroupForRange(winSrc, mid, t2, usedIds);
-        winClone.setAttribute('label', `${winSrc.getAttribute('label') || 'Winner'} #${i + 1}`);
-        scene.appendChild(catClone);
-        scene.appendChild(winClone);
-        pairs += 1;
+        const cutEnd = (t2 - t1 > 20) ? (t2 - 1) : t2;
+        const isCategory = (step % 2 === 0);
+        const src = isCategory ? catSrc : winSrc;
+        const fallbackName = isCategory ? 'Category' : 'Winner';
+        const clone = cloneGroupForRange(src, t1, cutEnd, usedIds);
+        clone.setAttribute('label', `${src.getAttribute('label') || fallbackName} #${step + 1}`);
+        scene.appendChild(clone);
+        placed += 1;
+        step += 1;
       }
       renderXmlBeatUI();
-      if (xbActionStatus) xbActionStatus.textContent = `Cloned ${pairs} VS Category + Winner pairs across beat intervals.`;
+      if (xbActionStatus) {
+        xbActionStatus.textContent = `Cloned ${placed} alternating Category → Winner cuts between Beat #${startIdx + 1} and Beat #${endIdx + 1}.`;
+      }
       StudioAudio.playSuccess();
     });
   }

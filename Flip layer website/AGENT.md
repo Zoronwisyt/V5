@@ -1337,3 +1337,30 @@ At the end of every prompt where changes are made:
   - Verified `app.js` and `fx.js` syntax with `node --check` (exit code 0).
 - **Invariants / Rules to Uphold**:
   - Keep Beat Groups XML export isolated from Wipe Studio XML export (`downloadXmlBtn`) so each tab exports its own XML.
+
+### 2026-11-13 — Detect `<embedScene>` Groups & Fix Mobile Bottom Empty Space
+- **Operator Request**: Analyze `Project Name 330.xml` to fix Beat Groups not detecting any groups, and fix the empty space at the very bottom of the mobile GUI.
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\fx.js`
+  - `C:\Users\jeduc\Downloads\Flippy v5\styles.css`
+- **Specific Adjustments Made**:
+  - Analyzed `Project Name 330.xml`: Alight Motion exports groups as `<embedScene>` elements (e.g. `Category`, `Winner`) rather than `<group>`, with internal `<scene>` layers using relative `0`-based timestamps and `<effect id="com.alightcreative...">` plugin IDs.
+  - Updated `renderXmlBeatUI()` in `fx.js` to detect both `<group>` and `<embedScene>` direct children of the root `<scene>`, and updated `xbGroupsTrack` to render `<embedScene>` layers as group bars.
+  - Hardened `cloneGroupForRange()` in `fx.js` to only regenerate numeric layer IDs (preserving `<effect id="com.alightcreative...">` plugin IDs), update `outTime` on cloned `<embedScene>` elements, and preserve relative `0`-based timestamps inside `<embedScene>`'s nested `<scene>`.
+  - Updated `.mobile-tab-bar` in `styles.css` to dock flush to `bottom: 0; left: 0; right: 0;` with `padding: 6px 8px max(8px, env(safe-area-inset-bottom, 8px));` and `border-radius: 20px 20px 0 0;`, eliminating the empty gap below the bottom bar on iOS while keeping `.mobile-header` and `.mobile-tab-content` aligned above it.
+  - Verified `fx.js` syntax with `node --check` (exit code 0).
+- **Invariants / Rules to Uphold**:
+  - Never overwrite `<effect id="...">` plugin identifiers or `<embedScene>` inner `<scene>` relative timestamps when cloning Beat Groups.
+
+### 2026-11-13 — Alternating Category → Winner Sequence Between Bookmarks
+- **Operator Request**: Make Category and Winner copy/paste in an alternating `Category -> Winner -> Category -> Winner` sequence, with each group cut to the exact length between the selected start and end bookmarks.
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\index.html`
+  - `C:\Users\jeduc\Downloads\Flippy v5\fx.js`
+- **Specific Adjustments Made**:
+  - Set `beat2beat` (`Beat-to-Beat Sequence (Category → Winner → Category → Winner)`) as the default selected timing mode in `#xbVsSplitMode` (`index.html`).
+  - Updated `#xbVsCloneAllBtn` in `fx.js` to iterate from the user's selected **Category Starts At** bookmark (`startIdx`) to **Winner Ends At** bookmark (`endIdx`), alternating `Category → Winner → Category → Winner` on each beat interval `[t1, t2]` and cutting each group to `t1 .. t2 - 1` (preventing 1ms overlap while matching Alight Motion bookmark lengths).
+  - Updated `getVsSpan()` `beat2beat` mode in `fx.js` to also cut at `b2 - 1` / `b3 - 1` for exact non-overlapping beat intervals.
+  - Verified `fx.js` syntax with `node --check` (exit code 0).
+- **Invariants / Rules to Uphold**:
+  - Respect the user's selected Start and End bookmark range when cloning alternating VS groups.
