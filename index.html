@@ -1685,6 +1685,65 @@
             </div>
             <div id="xmlBeatActionStatus" class="conv-status" style="margin-top: 8px;"></div>
           </div>
+
+          <div class="converter-card">
+            <div class="card-title">
+              <span class="step-index-tag">VS</span>
+              VS Edit · Category &amp; Winner
+            </div>
+            <div class="xmlbeat-grid-2">
+              <div class="control-group">
+                <label class="field-label" for="xbVsCategoryGroup">Category Group</label>
+                <select id="xbVsCategoryGroup" class="styled-input" disabled>
+                  <option value="">Import XML first</option>
+                </select>
+              </div>
+              <div class="control-group">
+                <label class="field-label" for="xbVsWinnerGroup">Winner Group</label>
+                <select id="xbVsWinnerGroup" class="styled-input" disabled>
+                  <option value="">Import XML first</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="xmlbeat-grid-2">
+              <div class="control-group">
+                <label class="field-label" for="xbVsCatStartBeat">Category Starts At</label>
+                <select id="xbVsCatStartBeat" class="styled-input" disabled></select>
+              </div>
+              <div class="control-group">
+                <label class="field-label" for="xbVsWinEndBeat">Winner Ends At</label>
+                <select id="xbVsWinEndBeat" class="styled-input" disabled></select>
+              </div>
+            </div>
+
+            <div class="xmlbeat-grid-2">
+              <div class="control-group">
+                <label class="field-label" for="xbVsCatStartSec">Category Start (sec)</label>
+                <input type="number" id="xbVsCatStartSec" class="styled-input" step="0.01" min="0" value="0" disabled>
+              </div>
+              <div class="control-group">
+                <label class="field-label" for="xbVsWinEndSec">Winner End (sec)</label>
+                <input type="number" id="xbVsWinEndSec" class="styled-input" step="0.01" min="0" value="2" disabled>
+              </div>
+            </div>
+
+            <div class="control-group" style="margin-top: 10px;">
+              <label class="field-label" for="xbVsSplitMode">Category → Winner Timing Mode</label>
+              <select id="xbVsSplitMode" class="styled-input">
+                <option value="sequential">Sequential 50/50 (Category 1st half → Winner 2nd half)</option>
+                <option value="beat2beat">Beat-to-Beat (Category: Beat 1→2 · Winner: Beat 2→3)</option>
+                <option value="overlap">Full Span Overlap (Both: Category Start → Winner End)</option>
+              </select>
+            </div>
+
+            <div id="xbVsSummary" class="xmlbeat-range-pill">Category: 0:00:00 → 0:00:01 · Winner: 0:00:01 → 0:00:02</div>
+
+            <div style="display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;">
+              <button class="ph-btn primary" id="xbVsCopyPairBtn" type="button" disabled style="flex: 1; justify-content: center;">Copy Category + Winner</button>
+              <button class="ph-btn" id="xbVsCloneAllBtn" type="button" disabled style="flex: 1; justify-content: center;">Clone VS Across Beats</button>
+            </div>
+          </div>
         </div>
 
         <!-- Column 2: Visual Timeline & Modified XML Output -->
@@ -1760,6 +1819,31 @@
                   <pre><code id="xmlBeatOutputCode">&lt;!-- Import an Alight Motion XML file to inspect and copy groups between beats --&gt;</code></pre>
                 </div>
               </div>
+            </div>
+          </div>
+
+          <div class="converter-card" id="xmlBeatSeparateExportCard">
+            <div class="card-title">
+              <span class="step-index-tag">05</span>
+              Export Beat Groups XML
+            </div>
+            <p class="converter-desc" id="xmlBeatExportMeta" style="margin-bottom: 10px;">Import an Alight Motion XML to enable separate Beat Groups export.</p>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button class="ph-btn primary" id="xmlBeatSeparateDownloadBtn" type="button" disabled style="flex: 1; justify-content: center;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Download Beat Groups XML
+              </button>
+              <button class="ph-btn" id="xmlBeatSeparateCopyBtn" type="button" disabled style="flex: 1; justify-content: center;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
+                Copy Beat Groups XML
+              </button>
             </div>
           </div>
         </div>

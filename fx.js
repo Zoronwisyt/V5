@@ -1197,6 +1197,8 @@
       navTabXmlBeat.classList.add('active');
       syncXmlBeatPlacement();
       xmlbeatPanel.style.display = 'flex';
+      const headerExportLabelEl = document.getElementById('headerExportLabel');
+      if (headerExportLabelEl) headerExportLabelEl.textContent = 'Export Beat XML';
       window.dispatchEvent(new CustomEvent('flippy:tabswitched', { detail: { tab: 'xmlbeat' } }));
     });
   }
@@ -1217,6 +1219,8 @@
       document.documentElement.classList.remove('inspector-tab-open');
       mobileTabXmlBeat.classList.add('active');
       mobileNavXmlBeat.classList.add('active');
+      const mobileDlTextEl = document.getElementById('mobileHeaderDlText');
+      if (mobileDlTextEl) mobileDlTextEl.textContent = 'Export Beat XML';
     });
   }
 
@@ -1254,6 +1258,9 @@
   const xbOutputCode = document.getElementById('xmlBeatOutputCode');
   const xbCopyOutBtn = document.getElementById('xmlBeatCopyOutBtn');
   const xbDownloadOutBtn = document.getElementById('xmlBeatDownloadOutBtn');
+  const xbSeparateCopyBtn = document.getElementById('xmlBeatSeparateCopyBtn');
+  const xbSeparateDownloadBtn = document.getElementById('xmlBeatSeparateDownloadBtn');
+  const xbExportMeta = document.getElementById('xmlBeatExportMeta');
 
   let xbDoc = null;
   let xbFilename = 'beat_edited.xml';
@@ -1452,6 +1459,7 @@
     if (xbEndSec) xbEndSec.disabled = !canEdit;
     if (xbCopyGroupBtn) xbCopyGroupBtn.disabled = !canEdit;
     if (xbCloneAllBtn) xbCloneAllBtn.disabled = !(canEdit && xbBookmarks.length >= 2);
+    if (typeof populateVsControls === 'function') populateVsControls(canEdit);
 
     // Visual Timeline Ruler & Pins
     if (xbMarkersTrack) {
@@ -1544,9 +1552,17 @@
     }
 
     const xmlOut = serializeXbDoc();
+    const beatExportName = xbFilename.replace(/\.xml$/i, '') + '_beats.xml';
     if (xbOutputCode) xbOutputCode.textContent = xmlOut;
     if (xbCopyOutBtn) xbCopyOutBtn.disabled = !xmlOut;
     if (xbDownloadOutBtn) xbDownloadOutBtn.disabled = !xmlOut;
+    if (xbSeparateCopyBtn) xbSeparateCopyBtn.disabled = !xmlOut;
+    if (xbSeparateDownloadBtn) xbSeparateDownloadBtn.disabled = !xmlOut;
+    if (xbExportMeta) {
+      xbExportMeta.textContent = xmlOut
+        ? `Ready to export ${beatExportName} (${(xmlOut.length / 1024).toFixed(1)} KB)`
+        : 'Import an Alight Motion XML to enable separate Beat Groups export.';
+    }
     setXbPlayheadMs(xbPlayheadMs);
     updateRangeSummaryAndTimeline();
   }
@@ -1586,10 +1602,13 @@
   <bookmark t="2500" label="Beat 2" />
   <bookmark t="4200" label="Beat 3" />
   <bookmark t="60000" label="1 Min Mark" />
-  <group id="10" label="3D Flip Group" startTime="1000" endTime="2500">
-    <shape id="11" label="Card A" startTime="1000" endTime="2500" fillType="color" s=".rect">
+  <group id="10" label="Category Text" startTime="1000" endTime="2500">
+    <shape id="11" label="Category Card" startTime="1000" endTime="2500" fillType="color" s=".rect">
       <fillColor value="#ff5d866c" />
     </shape>
+  </group>
+  <group id="20" label="Winner Text" startTime="2500" endTime="4200">
+    <text id="21" label="Winner Label" startTime="2500" endTime="4200">Winner</text>
   </group>
 </scene>`;
       loadAlightXmlString(sampleXml, 'fl5_beat_demo.xml');
@@ -1693,35 +1712,38 @@
     });
   }
 
-  if (xbCopyOutBtn) {
-    xbCopyOutBtn.addEventListener('click', async () => {
-      const xmlOut = serializeXbDoc();
-      if (!xmlOut) return;
-      try {
-        await navigator.clipboard.writeText(xmlOut);
-        if (xbActionStatus) xbActionStatus.textContent = 'Copied modified XML to clipboard.';
-        StudioAudio.playClick();
-      } catch (e) {}
-    });
+  async function copyXbOutputXml() {
+    const xmlOut = serializeXbDoc();
+    if (!xmlOut) return;
+    try {
+      await navigator.clipboard.writeText(xmlOut);
+      if (xbActionStatus) xbActionStatus.textContent = 'Copied modified Beat Groups XML to clipboard.';
+      StudioAudio.playClick();
+    } catch (e) {}
   }
 
-  if (xbDownloadOutBtn) {
-    xbDownloadOutBtn.addEventListener('click', () => {
-      const xmlOut = serializeXbDoc();
-      if (!xmlOut) return;
-      const blob = new Blob([xmlOut], { type: 'application/xml;charset=utf-8' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = xbFilename.replace(/\.xml$/i, '') + '_beats.xml';
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => {
-        URL.revokeObjectURL(a.href);
-        a.remove();
-      }, 250);
-      StudioAudio.playClick();
-    });
+  function downloadXbOutputXml() {
+    const xmlOut = serializeXbDoc();
+    if (!xmlOut) return;
+    const beatExportName = xbFilename.replace(/\.xml$/i, '') + '_beats.xml';
+    const blob = new Blob([xmlOut], { type: 'application/xml;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = beatExportName;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      URL.revokeObjectURL(a.href);
+      a.remove();
+    }, 250);
+    if (xbActionStatus) xbActionStatus.textContent = `Downloaded ${beatExportName}.`;
+    StudioAudio.playClick();
   }
+
+  if (xbCopyOutBtn) xbCopyOutBtn.addEventListener('click', copyXbOutputXml);
+  if (xbDownloadOutBtn) xbDownloadOutBtn.addEventListener('click', downloadXbOutputXml);
+  if (xbSeparateCopyBtn) xbSeparateCopyBtn.addEventListener('click', copyXbOutputXml);
+  if (xbSeparateDownloadBtn) xbSeparateDownloadBtn.addEventListener('click', downloadXbOutputXml);
 
   // Smooth Arrow Dropdown for Modified Alight Motion XML
   const xbOutputCard = document.getElementById('xmlBeatOutputCard');
@@ -1833,6 +1855,176 @@
     });
     window.addEventListener('pointerup', () => {
       scrubbing = false;
+    });
+  }
+
+  // VS Edit: Category Start + Winner End Controller
+  const vsCatGroupSel = document.getElementById('xbVsCategoryGroup');
+  const vsWinGroupSel = document.getElementById('xbVsWinnerGroup');
+  const vsCatStartBeat = document.getElementById('xbVsCatStartBeat');
+  const vsWinEndBeat = document.getElementById('xbVsWinEndBeat');
+  const vsCatStartSec = document.getElementById('xbVsCatStartSec');
+  const vsWinEndSec = document.getElementById('xbVsWinEndSec');
+  const vsSplitMode = document.getElementById('xbVsSplitMode');
+  const vsSummary = document.getElementById('xbVsSummary');
+  const vsCopyPairBtn = document.getElementById('xbVsCopyPairBtn');
+  const vsCloneAllBtn = document.getElementById('xbVsCloneAllBtn');
+
+  function getVsSpan(catStartMs, winEndMs, startBeatIdx = 0) {
+    const s = Math.max(0, Math.round(catStartMs));
+    const e = Math.max(s + 20, Math.round(winEndMs));
+    const mode = vsSplitMode ? vsSplitMode.value : 'sequential';
+    if (mode === 'overlap') {
+      return { catStart: s, catEnd: e, winStart: s, winEnd: e };
+    }
+    if (mode === 'beat2beat' && xbBookmarks[startBeatIdx] && xbBookmarks[startBeatIdx + 1] && xbBookmarks[startBeatIdx + 2]) {
+      const b1 = xbBookmarks[startBeatIdx].t;
+      const b2 = xbBookmarks[startBeatIdx + 1].t;
+      const b3 = xbBookmarks[startBeatIdx + 2].t;
+      if (b2 > b1 && b3 > b2) {
+        return { catStart: b1, catEnd: b2, winStart: b2, winEnd: b3 };
+      }
+    }
+    const mid = Math.round((s + e) / 2);
+    return { catStart: s, catEnd: mid, winStart: mid, winEnd: e };
+  }
+
+  function updateVsSummary() {
+    if (!vsSummary) return;
+    const sMs = Math.max(0, Math.round((parseFloat(vsCatStartSec && vsCatStartSec.value) || 0) * 1000));
+    const eMs = Math.max(sMs + 20, Math.round((parseFloat(vsWinEndSec && vsWinEndSec.value) || (sMs / 1000 + 2)) * 1000));
+    const bi = Number(vsCatStartBeat && vsCatStartBeat.value) || 0;
+    const span = getVsSpan(sMs, eMs, bi);
+    vsSummary.textContent =
+      `Category: ${formatAlightClock(span.catStart)} → ${formatAlightClock(span.catEnd)} (${((span.catEnd - span.catStart) / 1000).toFixed(2)}s)` +
+      ` · Winner: ${formatAlightClock(span.winStart)} → ${formatAlightClock(span.winEnd)} (${((span.winEnd - span.winStart) / 1000).toFixed(2)}s)`;
+  }
+
+  function populateVsControls(canEdit) {
+    if (vsCatGroupSel && vsWinGroupSel) {
+      if (xbGroups.length) {
+        const gOpts = xbGroups.map((g, i) => {
+          const label = g.getAttribute('label') || `Group #${g.getAttribute('id') || i + 1}`;
+          return `<option value="${i}">${label}</option>`;
+        }).join('');
+        vsCatGroupSel.innerHTML = gOpts;
+        vsWinGroupSel.innerHTML = gOpts;
+        vsCatGroupSel.value = '0';
+        vsWinGroupSel.value = String(xbGroups.length > 1 ? 1 : 0);
+        vsCatGroupSel.disabled = false;
+        vsWinGroupSel.disabled = false;
+      } else {
+        vsCatGroupSel.innerHTML = '<option value="">No groups</option>';
+        vsWinGroupSel.innerHTML = '<option value="">No groups</option>';
+        vsCatGroupSel.disabled = true;
+        vsWinGroupSel.disabled = true;
+      }
+    }
+
+    if (vsCatStartBeat && vsWinEndBeat) {
+      if (xbBookmarks.length) {
+        const bOpts = xbBookmarks.map((b, i) => `<option value="${i}">Beat #${i + 1} · ${formatAlightClock(b.t)} (${(b.t / 1000).toFixed(2)}s)</option>`).join('');
+        vsCatStartBeat.innerHTML = bOpts;
+        vsWinEndBeat.innerHTML = bOpts;
+        vsCatStartBeat.value = '0';
+        const endIdx = Math.min(xbBookmarks.length >= 3 ? 2 : 1, xbBookmarks.length - 1);
+        vsWinEndBeat.value = String(endIdx);
+        vsCatStartBeat.disabled = false;
+        vsWinEndBeat.disabled = false;
+        if (vsCatStartSec) vsCatStartSec.value = (xbBookmarks[0].t / 1000).toFixed(2);
+        if (vsWinEndSec) vsWinEndSec.value = (xbBookmarks[endIdx].t / 1000).toFixed(2);
+      } else {
+        vsCatStartBeat.innerHTML = '<option value="">No bookmarks</option>';
+        vsWinEndBeat.innerHTML = '<option value="">No bookmarks</option>';
+        vsCatStartBeat.disabled = true;
+        vsWinEndBeat.disabled = true;
+      }
+    }
+
+    if (vsCatStartSec) vsCatStartSec.disabled = !canEdit;
+    if (vsWinEndSec) vsWinEndSec.disabled = !canEdit;
+    if (vsCopyPairBtn) vsCopyPairBtn.disabled = !canEdit;
+    if (vsCloneAllBtn) vsCloneAllBtn.disabled = !(canEdit && xbBookmarks.length >= 2);
+    updateVsSummary();
+  }
+
+  if (vsCatStartBeat) {
+    vsCatStartBeat.addEventListener('change', () => {
+      const b = xbBookmarks[Number(vsCatStartBeat.value)];
+      if (b && vsCatStartSec) vsCatStartSec.value = (b.t / 1000).toFixed(2);
+      updateVsSummary();
+    });
+  }
+  if (vsWinEndBeat) {
+    vsWinEndBeat.addEventListener('change', () => {
+      const b = xbBookmarks[Number(vsWinEndBeat.value)];
+      if (b && vsWinEndSec) vsWinEndSec.value = (b.t / 1000).toFixed(2);
+      updateVsSummary();
+    });
+  }
+  if (vsCatStartSec) vsCatStartSec.addEventListener('input', updateVsSummary);
+  if (vsWinEndSec) vsWinEndSec.addEventListener('input', updateVsSummary);
+  if (vsSplitMode) vsSplitMode.addEventListener('change', updateVsSummary);
+
+  if (vsCopyPairBtn) {
+    vsCopyPairBtn.addEventListener('click', () => {
+      if (!xbDoc || !xbGroups.length) return;
+      const scene = xbDoc.querySelector('scene');
+      const catSrc = xbGroups[Number(vsCatGroupSel ? vsCatGroupSel.value : 0)];
+      const winSrc = xbGroups[Number(vsWinGroupSel ? vsWinGroupSel.value : 0)];
+      if (!scene || !catSrc || !winSrc) return;
+
+      const sMs = Math.max(0, Math.round((parseFloat(vsCatStartSec && vsCatStartSec.value) || 0) * 1000));
+      const eMs = Math.max(sMs + 20, Math.round((parseFloat(vsWinEndSec && vsWinEndSec.value) || (sMs / 1000 + 2)) * 1000));
+      const bi = Number(vsCatStartBeat && vsCatStartBeat.value) || 0;
+      const span = getVsSpan(sMs, eMs, bi);
+
+      const usedIds = collectUsedIds(scene);
+      const catClone = cloneGroupForRange(catSrc, span.catStart, span.catEnd, usedIds);
+      catClone.setAttribute('label', `${catSrc.getAttribute('label') || 'Category'} (VS)`);
+      const winClone = cloneGroupForRange(winSrc, span.winStart, span.winEnd, usedIds);
+      winClone.setAttribute('label', `${winSrc.getAttribute('label') || 'Winner'} (VS)`);
+
+      scene.appendChild(catClone);
+      scene.appendChild(winClone);
+      const maxEnd = Math.max(span.catEnd, span.winEnd);
+      if (maxEnd > Number(scene.getAttribute('totalTime') || 0)) {
+        scene.setAttribute('totalTime', String(maxEnd));
+      }
+      renderXmlBeatUI();
+      if (xbActionStatus) {
+        xbActionStatus.textContent = `Copied VS pair: Category (${formatAlightClock(span.catStart)}→${formatAlightClock(span.catEnd)}) + Winner (${formatAlightClock(span.winStart)}→${formatAlightClock(span.winEnd)}).`;
+      }
+      StudioAudio.playSuccess();
+    });
+  }
+
+  if (vsCloneAllBtn) {
+    vsCloneAllBtn.addEventListener('click', () => {
+      if (!xbDoc || !xbGroups.length || xbBookmarks.length < 2) return;
+      const scene = xbDoc.querySelector('scene');
+      const catSrc = xbGroups[Number(vsCatGroupSel ? vsCatGroupSel.value : 0)];
+      const winSrc = xbGroups[Number(vsWinGroupSel ? vsWinGroupSel.value : 0)];
+      if (!scene || !catSrc || !winSrc) return;
+
+      const usedIds = collectUsedIds(scene);
+      let pairs = 0;
+      for (let i = 0; i < xbBookmarks.length - 1; i += 1) {
+        const t1 = xbBookmarks[i].t;
+        const t2 = xbBookmarks[i + 1].t;
+        if (t2 <= t1) continue;
+        const mid = Math.round((t1 + t2) / 2);
+        const catClone = cloneGroupForRange(catSrc, t1, mid, usedIds);
+        catClone.setAttribute('label', `${catSrc.getAttribute('label') || 'Category'} #${i + 1}`);
+        const winClone = cloneGroupForRange(winSrc, mid, t2, usedIds);
+        winClone.setAttribute('label', `${winSrc.getAttribute('label') || 'Winner'} #${i + 1}`);
+        scene.appendChild(catClone);
+        scene.appendChild(winClone);
+        pairs += 1;
+      }
+      renderXmlBeatUI();
+      if (xbActionStatus) xbActionStatus.textContent = `Cloned ${pairs} VS Category + Winner pairs across beat intervals.`;
+      StudioAudio.playSuccess();
     });
   }
 })();

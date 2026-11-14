@@ -5760,15 +5760,16 @@ html.theme-transitioning .mobile-tab-content.active .mobile-tab-inner {
 
   .mobile-tab-bar {
     position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    left: 8px;
+    right: 8px;
+    bottom: max(8px, env(safe-area-inset-bottom, 8px));
     grid-template-columns: none;
     grid-auto-flow: column;
     grid-auto-columns: minmax(0, 1fr);
-    gap: 3px;
-    padding: 4px 6px max(6px, env(safe-area-inset-bottom, 6px));
-    border-radius: 16px 16px 0 0;
+    gap: 2px;
+    padding: 4px;
+    border-radius: 999px;
+    overflow: hidden;
   }
 
   .mobile-tab,
@@ -5781,7 +5782,7 @@ html.theme-transitioning .mobile-tab-content.active .mobile-tab-inner {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    border-radius: 10px;
+    border-radius: 999px;
   }
 
   .mobile-tab svg,
@@ -5805,7 +5806,7 @@ html.theme-transitioning .mobile-tab-content.active .mobile-tab-inner {
     top: auto !important;
     left: 6px;
     right: 6px;
-    bottom: calc(max(6px, env(safe-area-inset-bottom, 6px)) + 48px);
+    bottom: calc(max(8px, env(safe-area-inset-bottom, 8px)) + 54px);
     z-index: 199;
     min-height: 34px;
     padding: 3px 8px;

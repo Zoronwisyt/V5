@@ -4983,6 +4983,9 @@
         if (btnDl) btnDl.click();
       } else if (activeMainWorkspace === 'editing') {
         if (window.EditingTabStudio && typeof window.EditingTabStudio.exportXML === 'function') window.EditingTabStudio.exportXML();
+      } else if (document.getElementById('navTabXmlBeatTool')?.classList.contains('active')) {
+        const btnDl = document.getElementById('xmlBeatDownloadOutBtn');
+        if (btnDl && !btnDl.disabled) btnDl.click();
       } else if (downloadXmlBtn) {
         downloadXmlBtn.click();
       }
@@ -8542,6 +8545,9 @@ void main() {
         } else if (hollowboxTab && hollowboxTab.classList.contains('active')) {
           const btnDl = document.getElementById('hbDownloadXmlBtn');
           if (btnDl) btnDl.click();
+        } else if (document.getElementById('mobileTabXmlBeatTool')?.classList.contains('active')) {
+          const btnDl = document.getElementById('xmlBeatDownloadOutBtn');
+          if (btnDl && !btnDl.disabled) btnDl.click();
         } else if (downloadXmlBtn) {
           downloadXmlBtn.click();
         }

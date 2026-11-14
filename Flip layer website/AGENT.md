@@ -1300,3 +1300,40 @@ At the end of every prompt where changes are made:
   - Upgraded `#xmlBeatTimelineWrap` into an Alight Motion-style timeline view (`am-tl-shell`) with transport bar (Play/Pause, Previous/Next Beat, Loop, live `0:00:00` timecode, `1x/2x/4x` zoom), tick-mark ruler with scrubbable white playhead line + red `<bookmark>` pins, sticky left layer icon gutter, color-coded rounded layer bars (`group` coral, `shape` cyan, `text` gold, `media` purple) with `≡` grips, and white keyframe diamonds (`◆`).
 - **Invariants / Rules to uphold for future turns**:
   - Keep the `38px` left gutter offset synchronized across `#xbPlayheadLine` and `#xmlBeatTargetRange`.
+
+
+### 2026-11-13T22:49:30-06:00
+- **Operator Request**: Make the mobile bottom tab bar a small fully-rounded pill instead of the flat-bottom shape.
+- **Files Modified**: `C:\Users\jeduc\Downloads\Flippy v5\styles.css`
+- **Specific Adjustments Made**:
+  - `.mobile-tab-bar` (compact bottom-dock block): floating pill — `left/right: 8px`, `bottom: max(8px, env(safe-area-inset-bottom, 8px))`, `padding: 4px`, `border-radius: 999px`, `overflow: hidden` (replaces flush `bottom: 0` + `border-radius: 16px 16px 0 0` + safe-area padding).
+  - `.mobile-tab`, `.mobile-inspector-pill`, `.mobile-gui-pill` → `border-radius: 999px` so the active highlight is a pill inside the pill.
+  - `.mobile-header` dock raised to `calc(max(8px, env(safe-area-inset-bottom, 8px)) + 54px)` to sit just above the floating pill.
+- **Invariants**: Bottom tab bar is a floating rounded pill above the iOS home-indicator safe area; keep header offset in sync with pill height (~48px + 6px gap).
+
+### 2026-11-13 — VS Edit Category & Winner Beat Group Support
+- **Operator Request**: In the Beat Groups tab, add VS Edit support for two text groups (`Category` and `Winner`) so the user can choose where `Category` starts and where `Winner` ends, since Category and Winner appear sequentially across beat markers.
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\index.html`
+  - `C:\Users\jeduc\Downloads\Flippy v5\fx.js`
+- **Specific Adjustments Made**:
+  - Added the **VS Edit · Category & Winner** card in `#xmlbeat-panel` (`index.html`) with selectors for Category `<group>` (`#xbVsCategoryGroup`) and Winner `<group>` (`#xbVsWinnerGroup`), beat/seconds pickers for **Category Starts At** (`#xbVsCatStartBeat`, `#xbVsCatStartSec`) and **Winner Ends At** (`#xbVsWinEndBeat`, `#xbVsWinEndSec`), timing split mode selector (`#xbVsSplitMode`: `Sequential 50/50`, `Beat-to-Beat`, `Full Span Overlap`), live span summary (`#xbVsSummary`), and action buttons (`#xbVsCopyPairBtn`, `#xbVsCloneAllBtn`).
+  - Added the VS Edit controller in `fx.js` (`getVsSpan`, `updateVsSummary`, `populateVsControls`, `#xbVsCopyPairBtn`, `#xbVsCloneAllBtn`), wired `populateVsControls(canEdit)` into `renderXmlBeatUI()`, and updated `xbLoadSampleBtn` demo XML to include both `Category Text` (`id="10"`) and `Winner Text` (`id="20"`) groups.
+  - Verified `fx.js` syntax with `node --check` (exit code 0).
+- **Invariants / Rules to Uphold**:
+  - Keep `fx.js` valid ES syntax and preserve unique regenerated IDs when cloning `<group>` elements across beat intervals.
+  - Keep `#xmlbeat-panel` controls consistent with the Beat Groups UI and dark/sage aesthetic.
+
+### 2026-11-13 — Separate Beat Groups Export XML
+- **Operator Request**: Add a separate Export XML for the Beat Groups tab.
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\index.html`
+  - `C:\Users\jeduc\Downloads\Flippy v5\app.js`
+  - `C:\Users\jeduc\Downloads\Flippy v5\fx.js`
+- **Specific Adjustments Made**:
+  - Added dedicated card `05 · Export Beat Groups XML` (`#xmlBeatSeparateExportCard`) in `#xmlbeat-panel` (`index.html`) with `#xmlBeatExportMeta`, `#xmlBeatSeparateDownloadBtn` (**Download Beat Groups XML**), and `#xmlBeatSeparateCopyBtn` (**Copy Beat Groups XML**).
+  - Updated `headerExportBtn` and `mobileHeaderDlBtn` in `app.js` so clicking **Export XML** in the desktop or mobile header while the Beat Groups tab (`#navTabXmlBeatTool` / `#mobileTabXmlBeatTool`) is active triggers `#xmlBeatDownloadOutBtn` instead of downloading Wipe Studio XML.
+  - Extracted shared `copyXbOutputXml()` and `downloadXbOutputXml()` helpers in `fx.js`, wired them to both the panel header and card `05` buttons, synced `#xmlBeatExportMeta` and disabled states in `renderXmlBeatUI()`, and updated `headerExportLabel` / `mobileHeaderDlText` to `Export Beat XML` when switching to the Beat Groups tab.
+  - Verified `app.js` and `fx.js` syntax with `node --check` (exit code 0).
+- **Invariants / Rules to Uphold**:
+  - Keep Beat Groups XML export isolated from Wipe Studio XML export (`downloadXmlBtn`) so each tab exports its own XML.
