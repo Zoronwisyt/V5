@@ -367,6 +367,63 @@ const server = http.createServer(async (req, res) => {
     return handleTranscode(parsed, req, res);
   }
 
+  // Alight Motion Share Link -> Project Metadata & XML Converter Resolver
+  if (pathname === '/__fl5_am_link') {
+    const rawUrl = (parsed.searchParams.get('url') || '').trim();
+    if (!rawUrl) return sendJson(res, 400, { ok: false, error: 'Missing url parameter.' });
+
+    let targetUrl;
+    try {
+      targetUrl = new URL(rawUrl);
+    } catch {
+      return sendJson(res, 400, { ok: false, error: 'Invalid URL format.' });
+    }
+
+    const allowedHosts = ['alightcreative.com', 'www.alightcreative.com', 'alight.link', 'alight-creative.appspot.com'];
+    if (!allowedHosts.includes(targetUrl.hostname.toLowerCase())) {
+      return sendJson(res, 400, { ok: false, error: 'Only alightcreative.com / alight.link share URLs are supported.' });
+    }
+
+    try {
+      const resp = await fetch(targetUrl.toString(), {
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; FL-5/1.0)' },
+        redirect: 'follow'
+      });
+      if (!resp.ok) {
+        return sendJson(res, 502, { ok: false, error: `Alight share page returned HTTP ${resp.status}.` });
+      }
+      const html = await resp.text();
+      const getMeta = (prop) => {
+        const m = html.match(new RegExp(`<meta[^>]+property=["']${prop}["'][^>]+content=["']([^"']+)["']`, 'i'))
+          || html.match(new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+property=["']${prop}["']`, 'i'));
+        return m ? m[1] : '';
+      };
+      const title = getMeta('og:title') || (html.match(/<h1[^>]*>([^<]+)<\/h1>/i)?.[1] || 'Alight Motion Project').trim();
+      const description = getMeta('og:description') || '';
+      const thumbnail = getMeta('og:image') || '';
+      const canonical = getMeta('og:url') || resp.url || targetUrl.toString();
+      const idMatch = canonical.match(/\/u\/([^/]+)\/p\/([^/?#]+)/i) || targetUrl.pathname.match(/\/u\/([^/]+)\/p\/([^/?#]+)/i);
+      const uid = idMatch ? idMatch[1] : '';
+      const projectId = idMatch ? idMatch[2] : '';
+      const verMatch = html.match(/amVersionCode=(\d+)\s+amVersionString=([^\s]+)\s+amPackageVersion=([^\s]+)\s+maxFFVer=(\d+)/i);
+
+      return sendJson(res, 200, {
+        ok: true,
+        title,
+        description,
+        thumbnail,
+        canonical,
+        uid,
+        projectId,
+        amVersionCode: verMatch ? verMatch[1] : '',
+        amVersionString: verMatch ? verMatch[2] : '3.6.1',
+        maxFFVer: verMatch ? verMatch[4] : '101'
+      });
+    } catch (err) {
+      return sendJson(res, 500, { ok: false, error: err && err.message ? err.message : 'Failed to fetch Alight link.' });
+    }
+  }
+
   // Step 1: Initiate real MP4 / Audio conversion job (100% ad-free, popup-free, YouTube + TikTok No-Watermark HD)
   if (pathname === '/__flippy_yt_dl') {
     const ytUrl = (parsed.searchParams.get('url') || '').trim();

@@ -169,6 +169,19 @@
           </svg>
           <span>Media Converter</span>
         </button>
+        <button class="nav-tab" data-tab="amlink" id="navTabAmLink" type="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+          </svg>
+          <span>Link to XML</span>
+        </button>
+        <button class="nav-tab" data-tab="xmlbeat" id="navTabXmlBeatTool" type="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12h4l3-8 4 16 3-8h4"/>
+          </svg>
+          <span>Beat Groups</span>
+        </button>
         <button class="nav-tab" data-tab="realpreview" id="navTabRealPreview" type="button">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polygon points="12 2 2 7 12 12 22 7 12 2"/>
@@ -1448,6 +1461,305 @@
 
             <div class="converter-xml-preview" id="converterXmlPreview">
               <pre><code id="convertedXmlCode">&lt;!-- Load an XML file to inspect converted output --&gt;</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Workspace: Alight Link to XML Converter -->
+    <section class="panel converter-panel" id="amlink-panel" style="display: none; grid-column: 1 / -1;">
+      <div class="panel-header">
+        <h2>
+          <span class="ph-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+            </svg>
+          </span>
+          <span class="ph-text">Alight Link to XML<small>Convert Alight Motion share links or .amproj packages into XML</small></span>
+        </h2>
+        <div class="converter-header-actions">
+          <button class="ph-btn" id="amLinkCopyXmlBtn" type="button" disabled title="Copy generated XML">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+            Copy XML
+          </button>
+          <button class="ph-btn primary" id="amLinkDownloadXmlBtn" type="button" disabled title="Download Alight Motion XML">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Download XML
+          </button>
+        </div>
+      </div>
+
+      <div class="converter-layout">
+        <!-- Column 1: Share Link & Package Import -->
+        <div class="converter-col import-col">
+          <div class="converter-card">
+            <div class="card-title">
+              <span class="step-index-tag">01</span>
+              Alight Share Link
+            </div>
+            <div class="control-group" style="margin-top: 8px;">
+              <label class="field-label" for="amShareLinkInput">Paste <code>alightcreative.com/am/share/...</code> URL</label>
+              <input type="url" id="amShareLinkInput" class="styled-input" placeholder="https://alightcreative.com/am/share/u/.../p/..." value="https://alightcreative.com/am/share/u/W2Ct6Gbhebg5EK8ha1dXSFF9fuA3/p/wIylFKQmoy-754b5e228dbb127c">
+            </div>
+            <div style="display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;">
+              <button class="ph-btn primary" id="amLinkConvertBtn" type="button" style="flex: 1; justify-content: center;">Convert Link to XML</button>
+            </div>
+            <div id="amLinkStatus" class="conv-status" style="margin-top: 10px;"></div>
+          </div>
+
+          <div class="converter-card">
+            <div class="card-title">
+              <span class="step-index-tag">02</span>
+              Or Load .amproj / .xml File
+            </div>
+            <label class="xml-dropzone" for="amProjFileInput" style="cursor: pointer; margin-top: 6px;">
+              <input type="file" id="amProjFileInput" accept=".amproj,.xml,.zip" style="display: none;">
+              <div class="dropzone-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="12" y1="18" x2="12" y2="12"/>
+                  <polyline points="9 15 12 12 15 15"/>
+                </svg>
+              </div>
+              <div class="dropzone-text">
+                <strong>Choose .amproj or .xml</strong>
+                <span>Extracts scene XML directly in-browser</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Column 2: Metadata & XML Output -->
+        <div class="converter-col output-col">
+          <div class="converter-card" id="amLinkMetaCard" style="display: none;">
+            <div class="card-title">
+              <span class="step-index-tag">03</span>
+              Project Metadata
+            </div>
+            <div style="display: flex; gap: 12px; align-items: center; margin-top: 6px;">
+              <img id="amLinkThumb" src="" alt="Project thumbnail" style="width: 58px; height: 58px; object-fit: cover; border-radius: 10px; display: none; flex-shrink: 0; border: 1px solid var(--line-mid);">
+              <div style="min-width: 0; flex: 1;">
+                <div id="amLinkTitle" style="font-weight: 700; font-size: 13.5px; color: var(--text-1); word-break: break-word;"></div>
+                <div id="amLinkDesc" style="font-size: 12px; color: var(--text-2); margin-top: 2px;"></div>
+                <div id="amLinkIds" style="font-size: 11px; color: var(--accent); font-family: var(--font-mono); margin-top: 3px; word-break: break-all;"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="converter-card" style="flex: 1; display: flex; flex-direction: column;">
+            <div class="card-title">
+              <span class="step-index-tag">XML</span>
+              Generated Alight Motion XML
+            </div>
+            <div class="converter-xml-preview" style="flex: 1;">
+              <pre><code id="amLinkXmlCode">&lt;!-- Paste an Alight Motion share link and click "Convert Link to XML" --&gt;</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Workspace: XML Beat Marker Analyzer & Group Copier -->
+    <section class="panel converter-panel" id="xmlbeat-panel" style="display: none; grid-column: 1 / -1;">
+      <div class="panel-header">
+        <h2>
+          <span class="ph-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12h4l3-8 4 16 3-8h4"/>
+            </svg>
+          </span>
+          <span class="ph-text">XML Beat &amp; Group Copier<small>Analyze bookmark beat markers (0:00:00) and clone groups matched to beat intervals</small></span>
+        </h2>
+        <div class="converter-header-actions">
+          <button class="ph-btn" id="xmlBeatCopyOutBtn" type="button" disabled title="Copy modified Alight Motion XML">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+            Copy XML
+          </button>
+          <button class="ph-btn primary" id="xmlBeatDownloadOutBtn" type="button" disabled title="Download modified Alight Motion XML">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Download XML
+          </button>
+        </div>
+      </div>
+
+      <div class="converter-layout">
+        <!-- Column 1: Import, Beat Markers & Group Copy Controls -->
+        <div class="converter-col import-col">
+          <div class="converter-card">
+            <div class="card-title">
+              <span class="step-index-tag">01</span>
+              Import Alight Motion XML
+            </div>
+            <label class="xml-dropzone" id="xmlBeatDropzone" for="xmlBeatFileInput" style="cursor: pointer; margin-top: 6px;">
+              <input type="file" id="xmlBeatFileInput" accept=".xml,text/xml,application/xml" style="display: none;">
+              <div class="dropzone-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="12" y1="18" x2="12" y2="12"/>
+                  <polyline points="9 15 12 12 15 15"/>
+                </svg>
+              </div>
+              <div class="dropzone-text">
+                <strong>Drop or Choose Alight Motion .XML</strong>
+                <span>Reads &lt;bookmark&gt; ms markers &amp; &lt;group&gt; layers</span>
+              </div>
+            </label>
+            <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+              <button class="ph-btn" id="xmlBeatLoadSampleBtn" type="button" style="flex: 1; justify-content: center;">Load Demo Beat XML</button>
+            </div>
+            <div id="xmlBeatProjectInfo" class="conv-status" style="margin-top: 8px;">Import an Alight Motion XML file to analyze beat markers and groups.</div>
+          </div>
+
+          <div class="converter-card">
+            <div class="card-title">
+              <span class="step-index-tag">02</span>
+              Analyzed Beat Markers (ms &rarr; 0:00:00)
+            </div>
+            <div class="xmlbeat-marker-list" id="xmlBeatMarkersList">
+              <div class="xmlbeat-empty">No XML imported yet.</div>
+            </div>
+          </div>
+
+          <div class="converter-card">
+            <div class="card-title">
+              <span class="step-index-tag">03</span>
+              Copy Group Between Beats
+            </div>
+            <div class="control-group" style="margin-top: 8px;">
+              <label class="field-label" for="xmlBeatGroupSelect">Group to Copy</label>
+              <select id="xmlBeatGroupSelect" class="styled-input" disabled>
+                <option value="">Import XML with &lt;group&gt; layers first</option>
+              </select>
+            </div>
+
+            <div class="xmlbeat-grid-2">
+              <div class="control-group">
+                <label class="field-label" for="xmlBeatStartSelect">Start Beat (#1)</label>
+                <select id="xmlBeatStartSelect" class="styled-input" disabled></select>
+              </div>
+              <div class="control-group">
+                <label class="field-label" for="xmlBeatEndSelect">End Beat (#2)</label>
+                <select id="xmlBeatEndSelect" class="styled-input" disabled></select>
+              </div>
+            </div>
+
+            <div class="xmlbeat-grid-2">
+              <div class="control-group">
+                <label class="field-label" for="xmlBeatStartSec">Start (seconds)</label>
+                <input type="number" id="xmlBeatStartSec" class="styled-input" step="0.01" min="0" value="0" disabled>
+              </div>
+              <div class="control-group">
+                <label class="field-label" for="xmlBeatEndSec">End (seconds)</label>
+                <input type="number" id="xmlBeatEndSec" class="styled-input" step="0.01" min="0" value="1" disabled>
+              </div>
+            </div>
+
+            <label class="xmlbeat-check">
+              <input type="checkbox" id="xmlBeatLockLenToggle" checked>
+              <span>Lock copied group length to Beat #1 &rarr; Beat #2 duration</span>
+            </label>
+
+            <div id="xmlBeatRangeSummary" class="xmlbeat-range-pill">Range: 0:00:00 &rarr; 0:00:01 (1.00s)</div>
+
+            <div style="display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;">
+              <button class="ph-btn primary" id="xmlBeatCopyGroupBtn" type="button" disabled style="flex: 1; justify-content: center;">Copy Group to Range</button>
+              <button class="ph-btn" id="xmlBeatCloneAllBtn" type="button" disabled style="flex: 1; justify-content: center;">Clone Across All Beats</button>
+            </div>
+            <div id="xmlBeatActionStatus" class="conv-status" style="margin-top: 8px;"></div>
+          </div>
+        </div>
+
+        <!-- Column 2: Visual Timeline & Modified XML Output -->
+        <div class="converter-col output-col">
+          <div class="converter-card">
+            <div class="card-title">
+              <span class="step-index-tag">04</span>
+              Alight Motion Timeline View
+            </div>
+            <div class="am-tl-shell" id="xmlBeatTimelineWrap">
+              <div class="am-tl-transport">
+                <div class="am-tl-transport-btns">
+                  <button class="am-tl-btn" id="xbPrevBeatBtn" type="button" title="Jump to Previous Beat Marker">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
+                  </button>
+                  <button class="am-tl-btn primary" id="xbPlayBtn" type="button" title="Play / Pause Timeline">
+                    <svg class="xb-icon-play" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+                    <svg class="xb-icon-pause" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="display: none;"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                  </button>
+                  <button class="am-tl-btn" id="xbNextBeatBtn" type="button" title="Jump to Next Beat Marker">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+                  </button>
+                  <button class="am-tl-btn active" id="xbLoopBtn" type="button" title="Loop Playback">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                  </button>
+                </div>
+                <div class="am-tl-transport-right">
+                  <span class="am-tl-clock" id="xbPlayheadClock">0:00:00</span>
+                  <select id="xbZoomSelect" class="am-tl-zoom" title="Timeline Zoom">
+                    <option value="1">1x</option>
+                    <option value="2">2x</option>
+                    <option value="4">4x</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="am-tl-viewport" id="xbAmTimelineScroll">
+                <div class="am-tl-stage" id="xbAmStage">
+                  <div class="am-tl-ruler-row">
+                    <div class="am-tl-gutter-head">Layers</div>
+                    <div class="am-tl-ruler" id="xmlBeatRuler">
+                      <div class="am-tl-ticks" id="xbAmTicks"></div>
+                      <div class="am-tl-bookmarks" id="xmlBeatMarkersTrack"></div>
+                    </div>
+                  </div>
+                  <div class="am-tl-body" id="xbAmBody">
+                    <div class="xmlbeat-target-range" id="xmlBeatTargetRange" style="display: none;"></div>
+                    <div class="am-tl-playhead" id="xbPlayheadLine" style="left: 38px;">
+                      <span class="am-tl-playhead-badge" id="xbPlayheadBadge">0:00:00</span>
+                    </div>
+                    <div class="am-tl-rows" id="xmlBeatGroupsTrack">
+                      <div class="xmlbeat-empty">Import an Alight Motion XML file to view the layer &amp; beat timeline.</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="converter-card xmlbeat-collapsible-card" id="xmlBeatOutputCard">
+            <button class="xmlbeat-collapse-btn" id="xmlBeatOutputToggle" type="button" aria-expanded="false">
+              <span class="card-title" style="margin: 0;">
+                <span class="step-index-tag">XML</span>
+                Modified Alight Motion XML
+              </span>
+              <svg class="xmlbeat-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+            <div class="xmlbeat-collapse-body" id="xmlBeatOutputCollapse">
+              <div class="xmlbeat-collapse-inner">
+                <div class="converter-xml-preview" style="margin-top: 10px;">
+                  <pre><code id="xmlBeatOutputCode">&lt;!-- Import an Alight Motion XML file to inspect and copy groups between beats --&gt;</code></pre>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -2791,6 +3103,16 @@
       <div class="mobile-tab-inner" id="mobileConverterSlot"></div>
     </div>
 
+    <!-- Separate Alight Link -> XML Converter Tab -->
+    <div class="mobile-tab-content" id="mobileTabAmLink">
+      <div class="mobile-tab-inner" id="mobileAmLinkSlot"></div>
+    </div>
+
+    <!-- Separate XML Beat Marker & Group Copier Tab -->
+    <div class="mobile-tab-content" id="mobileTabXmlBeatTool">
+      <div class="mobile-tab-inner" id="mobileXmlBeatSlot"></div>
+    </div>
+
     <!-- Tab 3: Real Preview (Native GLSL / WebGL 3D Engine) -->
     <div class="mobile-tab-content" id="mobileTabRealPreview">
       <div class="mobile-tab-inner" id="mobileRealPreviewSlot"></div>
@@ -2863,6 +3185,19 @@
           <polyline points="21 15 16 10 5 21"/>
         </svg>
         <span>Media Converter</span>
+      </button>
+      <button class="mobile-tab" id="mobileNavAmLink" type="button">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+        </svg>
+        <span>Link XML</span>
+      </button>
+      <button class="mobile-tab" id="mobileNavXmlBeatTool" type="button">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12h4l3-8 4 16 3-8h4"/>
+        </svg>
+        <span>Beat XML</span>
       </button>
       <button class="mobile-tab" data-tab="mobileTabRealPreview" type="button">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

@@ -895,4 +895,944 @@
   } else {
     initGsapScrollAnimations();
   }
+
+  // ==========================================================================
+  // 8. ALIGHT LINK -> ALIGHT MOTION XML CONVERTER (OWN TAB + NATIVE GUI)
+  // ==========================================================================
+  const navTabAmLink = document.getElementById('navTabAmLink');
+  const amlinkPanel = document.getElementById('amlink-panel');
+  const mobileNavAmLink = document.getElementById('mobileNavAmLink');
+  const mobileTabAmLink = document.getElementById('mobileTabAmLink');
+  const mobileAmLinkSlot = document.getElementById('mobileAmLinkSlot');
+  const appMainEl = document.getElementById('app-main');
+
+  function syncAmLinkPlacement() {
+    if (!amlinkPanel) return;
+    if (window.innerWidth <= 860) {
+      if (mobileAmLinkSlot && amlinkPanel.parentElement !== mobileAmLinkSlot) {
+        mobileAmLinkSlot.appendChild(amlinkPanel);
+      }
+      amlinkPanel.style.display = 'block';
+    } else if (appMainEl && amlinkPanel.parentElement !== appMainEl) {
+      appMainEl.appendChild(amlinkPanel);
+      amlinkPanel.style.display = (navTabAmLink && navTabAmLink.classList.contains('active')) ? 'flex' : 'none';
+    }
+  }
+
+  if (navTabAmLink && amlinkPanel) {
+    navTabAmLink.addEventListener('click', () => {
+      ['controls-panel', 'preview-panel', 'data-panel', 'converter-panel', 'xmlbeat-panel', 'realpreview-panel', 'ytconverter-panel', 'hollowboxPanel', 'editing-panel'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+      });
+      document.querySelectorAll('.nav-tab').forEach((t) => t.classList.remove('active'));
+      navTabAmLink.classList.add('active');
+      syncAmLinkPlacement();
+      amlinkPanel.style.display = 'flex';
+      window.dispatchEvent(new CustomEvent('flippy:tabswitched', { detail: { tab: 'amlink' } }));
+    });
+  }
+
+  document.querySelectorAll('.nav-tab').forEach((tab) => {
+    if (tab === navTabAmLink) return;
+    tab.addEventListener('click', () => {
+      if (navTabAmLink) navTabAmLink.classList.remove('active');
+      if (amlinkPanel && window.innerWidth > 860) amlinkPanel.style.display = 'none';
+    });
+  });
+
+  if (mobileNavAmLink && mobileTabAmLink) {
+    mobileNavAmLink.addEventListener('click', () => {
+      syncAmLinkPlacement();
+      document.querySelectorAll('.mobile-tab-content.active').forEach((c) => c.classList.remove('active'));
+      document.querySelectorAll('.mobile-tab.active, .mobile-inspector-pill.active').forEach((t) => t.classList.remove('active'));
+      document.documentElement.classList.remove('inspector-tab-open');
+      mobileTabAmLink.classList.add('active');
+      mobileNavAmLink.classList.add('active');
+    });
+  }
+
+  document.querySelectorAll('.mobile-tab, #mobileInspectorToggleBtn').forEach((btn) => {
+    if (btn === mobileNavAmLink) return;
+    btn.addEventListener('click', () => {
+      if (mobileNavAmLink) mobileNavAmLink.classList.remove('active');
+      if (mobileTabAmLink) mobileTabAmLink.classList.remove('active');
+    });
+  });
+
+  window.addEventListener('resize', () => setTimeout(syncAmLinkPlacement, 60));
+  window.addEventListener('flippy:unlocked', () => setTimeout(syncAmLinkPlacement, 80));
+  setTimeout(syncAmLinkPlacement, 120);
+
+  const amLinkInput = document.getElementById('amShareLinkInput');
+  const amLinkConvertBtn = document.getElementById('amLinkConvertBtn');
+  const amProjFileInput = document.getElementById('amProjFileInput');
+  const amLinkMetaCard = document.getElementById('amLinkMetaCard');
+  const amLinkThumb = document.getElementById('amLinkThumb');
+  const amLinkTitle = document.getElementById('amLinkTitle');
+  const amLinkDesc = document.getElementById('amLinkDesc');
+  const amLinkIds = document.getElementById('amLinkIds');
+  const amLinkStatus = document.getElementById('amLinkStatus');
+  const amLinkXmlCode = document.getElementById('amLinkXmlCode');
+  const amLinkDownloadXmlBtn = document.getElementById('amLinkDownloadXmlBtn');
+  const amLinkCopyXmlBtn = document.getElementById('amLinkCopyXmlBtn');
+  let lastGeneratedAmXml = '';
+  let lastAmFilename = 'alight_project.xml';
+
+  function escXml(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
+  }
+
+  function buildAlightProjectXml(meta) {
+    const title = meta.title || 'Alight Motion Project';
+    const uid = meta.uid || '';
+    const projectId = meta.projectId || '';
+    const ver = meta.amVersionString || '3.6.1';
+    const desc = meta.description || '';
+    const url = meta.canonical || meta.rawUrl || '';
+    return [
+      '<?xml version="1.0" encoding="utf-8"?>',
+      `<!-- Converted by FL-5 · Source: ${escXml(url)} -->`,
+      desc ? `<!-- Package Info: ${escXml(desc)} -->` : '',
+      `<scene title="${escXml(title)}" width="1080" height="1920" exportWidth="1080" exportHeight="1920" fps="60" totalTime="5000" bgcolor="#ff000000" amver="${escXml(ver)}">`,
+      `  <bookmark t="0" label="${escXml(title)}" />`,
+      `  <shape id="1" label="${escXml(title)}" startTime="0" endTime="5000" fillType="color" s=".rect">`,
+      '    <transform>',
+      '      <location value="540.000,960.000,0.000" />',
+      '      <scale value="1.000,1.000" />',
+      '      <rotation value="0.000" />',
+      '    </transform>',
+      '    <property name="size" type="vec2" value="540.000,540.000" />',
+      '    <fillColor value="#ff5d866c" />',
+      '  </shape>',
+      uid || projectId ? `  <!-- Alight Share IDs: uid=${escXml(uid)} projectId=${escXml(projectId)} -->` : '',
+      '</scene>'
+    ].filter(Boolean).join('\n');
+  }
+
+  function setAmXmlOutput(xml, filename, statusMsg) {
+    lastGeneratedAmXml = xml;
+    lastAmFilename = filename || 'alight_project.xml';
+    if (amLinkXmlCode) amLinkXmlCode.textContent = xml;
+    if (amLinkDownloadXmlBtn) amLinkDownloadXmlBtn.disabled = !xml;
+    if (amLinkCopyXmlBtn) amLinkCopyXmlBtn.disabled = !xml;
+    if (amLinkStatus) amLinkStatus.textContent = statusMsg || '';
+  }
+
+  if (amLinkConvertBtn && amLinkInput) {
+    amLinkConvertBtn.addEventListener('click', async () => {
+      const url = (amLinkInput.value || '').trim();
+      if (!url) {
+        if (amLinkStatus) amLinkStatus.textContent = 'Please paste an Alight Motion share link first.';
+        return;
+      }
+      if (amLinkStatus) amLinkStatus.textContent = 'Fetching Alight Motion share metadata...';
+      try {
+        const res = await fetch(`/__fl5_am_link?url=${encodeURIComponent(url)}`);
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || `HTTP ${res.status}`);
+        }
+        if (amLinkMetaCard) amLinkMetaCard.style.display = 'flex';
+        if (amLinkThumb) {
+          if (data.thumbnail) {
+            amLinkThumb.src = data.thumbnail;
+            amLinkThumb.style.display = 'block';
+          } else {
+            amLinkThumb.style.display = 'none';
+          }
+        }
+        if (amLinkTitle) amLinkTitle.textContent = data.title || 'Alight Motion Project';
+        if (amLinkDesc) amLinkDesc.textContent = data.description || '';
+        if (amLinkIds) {
+          amLinkIds.textContent = `UID: ${data.uid || '—'} · Project: ${data.projectId || '—'} · AM v${data.amVersionString || '3.6.1'}`;
+        }
+        const safeName = (data.title || 'alight_project').replace(/[^a-z0-9_-]+/gi, '_').replace(/^_+|_+$/g, '').slice(0, 48) || 'alight_project';
+        const xml = buildAlightProjectXml(data);
+        setAmXmlOutput(
+          xml,
+          `${safeName}.xml`,
+          'Generated Alight Motion XML from share link metadata. (Note: Alight Creative does not expose private layer internals over public share links—load an exported .amproj/.xml file if you have the package file.)'
+        );
+        StudioAudio.playSuccess();
+      } catch (err) {
+        const m = url.match(/\/u\/([^/]+)\/p\/([^/?#]+)/i);
+        const fallbackMeta = {
+          title: m ? `Alight Project ${m[2].slice(0, 10)}` : 'Alight Motion Project',
+          uid: m ? m[1] : '',
+          projectId: m ? m[2] : '',
+          rawUrl: url
+        };
+        const xml = buildAlightProjectXml(fallbackMeta);
+        setAmXmlOutput(xml, 'alight_project.xml', `Generated XML shell (${err.message}).`);
+      }
+    });
+  }
+
+  if (amProjFileInput) {
+    amProjFileInput.addEventListener('change', async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const xmlMatch = text.match(/<\?xml[\s\S]*<\/scene>|<scene[\s\S]*<\/scene>/i);
+        if (xmlMatch) {
+          const base = file.name.replace(/\.[^.]+$/, '') || 'alight_project';
+          setAmXmlOutput(xmlMatch[0], `${base}.xml`, `Extracted Alight Motion XML from ${file.name}.`);
+          StudioAudio.playSuccess();
+        } else {
+          if (amLinkStatus) amLinkStatus.textContent = `Could not find uncompressed <scene> XML inside ${file.name}. If it is a compressed .amproj zip, extract project.xml from the archive first.`;
+        }
+      } catch (err) {
+        if (amLinkStatus) amLinkStatus.textContent = `Failed to read file: ${err.message}`;
+      }
+    });
+  }
+
+  if (amLinkDownloadXmlBtn) {
+    amLinkDownloadXmlBtn.addEventListener('click', () => {
+      if (!lastGeneratedAmXml) return;
+      const blob = new Blob([lastGeneratedAmXml], { type: 'application/xml;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = lastAmFilename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        URL.revokeObjectURL(a.href);
+        a.remove();
+      }, 250);
+      StudioAudio.playClick();
+    });
+  }
+
+  if (amLinkCopyXmlBtn) {
+    amLinkCopyXmlBtn.addEventListener('click', async () => {
+      if (!lastGeneratedAmXml) return;
+      try {
+        await navigator.clipboard.writeText(lastGeneratedAmXml);
+        if (amLinkStatus) amLinkStatus.textContent = 'Copied XML to clipboard.';
+        StudioAudio.playClick();
+      } catch (err) {}
+    });
+  }
+
+  // ==========================================================================
+  // 9. TAB QUICK FADE & POST-UNLOCK BUTTON BOUNCE TWEENING
+  // ==========================================================================
+  function triggerTabFade(el) {
+    if (!el) return;
+    el.classList.remove('tab-fade-enter');
+    void el.offsetWidth;
+    el.classList.add('tab-fade-enter');
+    setTimeout(() => el.classList.remove('tab-fade-enter'), 300);
+  }
+
+  window.addEventListener('flippy:tabswitched', () => {
+    document.querySelectorAll('#app-main > .panel').forEach((panel) => {
+      if (panel.style.display !== 'none') triggerTabFade(panel);
+    });
+  });
+
+  document.querySelectorAll('.mobile-tab, #mobileInspectorToggleBtn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      setTimeout(() => {
+        const activeTab = document.querySelector('.mobile-tab-content.active');
+        if (activeTab) triggerTabFade(activeTab);
+      }, 10);
+    });
+  });
+
+  let unlockBounceTimer = null;
+  window.addEventListener('flippy:unlocked', () => {
+    const targets = document.querySelectorAll(
+      '.nav-tab, .header-right > *, .mobile-tab, .mobile-inspector-pill, .mobile-header-right > *, .module, .converter-card'
+    );
+    const rots = ['-4.5deg', '4deg', '-3deg', '3.5deg', '-2.5deg', '2.5deg'];
+    targets.forEach((el, i) => {
+      el.style.setProperty('--unlock-rot', rots[i % rots.length]);
+      el.style.setProperty('--unlock-delay', `${Math.min(i * 22, 320)}ms`);
+    });
+    document.documentElement.classList.add('fl5-unlock-bounce');
+    clearTimeout(unlockBounceTimer);
+    unlockBounceTimer = setTimeout(() => {
+      document.documentElement.classList.remove('fl5-unlock-bounce');
+    }, 980);
+  });
+
+  // ==========================================================================
+  // 10. XML BEAT MARKER ANALYZER & GROUP COPIER
+  // ==========================================================================
+  const navTabXmlBeat = document.getElementById('navTabXmlBeatTool');
+  const xmlbeatPanel = document.getElementById('xmlbeat-panel');
+  const mobileNavXmlBeat = document.getElementById('mobileNavXmlBeatTool');
+  const mobileTabXmlBeat = document.getElementById('mobileTabXmlBeatTool');
+  const mobileXmlBeatSlot = document.getElementById('mobileXmlBeatSlot');
+
+  function syncXmlBeatPlacement() {
+    if (!xmlbeatPanel) return;
+    if (window.innerWidth <= 860) {
+      if (mobileXmlBeatSlot && xmlbeatPanel.parentElement !== mobileXmlBeatSlot) {
+        mobileXmlBeatSlot.appendChild(xmlbeatPanel);
+      }
+      xmlbeatPanel.style.display = 'block';
+    } else if (appMainEl && xmlbeatPanel.parentElement !== appMainEl) {
+      appMainEl.appendChild(xmlbeatPanel);
+      xmlbeatPanel.style.display = (navTabXmlBeat && navTabXmlBeat.classList.contains('active')) ? 'flex' : 'none';
+    }
+  }
+
+  if (navTabXmlBeat && xmlbeatPanel) {
+    navTabXmlBeat.addEventListener('click', () => {
+      ['controls-panel', 'preview-panel', 'data-panel', 'converter-panel', 'amlink-panel', 'realpreview-panel', 'ytconverter-panel', 'hollowboxPanel', 'editing-panel'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+      });
+      document.querySelectorAll('.nav-tab').forEach((t) => t.classList.remove('active'));
+      navTabXmlBeat.classList.add('active');
+      syncXmlBeatPlacement();
+      xmlbeatPanel.style.display = 'flex';
+      window.dispatchEvent(new CustomEvent('flippy:tabswitched', { detail: { tab: 'xmlbeat' } }));
+    });
+  }
+
+  document.querySelectorAll('.nav-tab').forEach((tab) => {
+    if (tab === navTabXmlBeat) return;
+    tab.addEventListener('click', () => {
+      if (navTabXmlBeat) navTabXmlBeat.classList.remove('active');
+      if (xmlbeatPanel && window.innerWidth > 860) xmlbeatPanel.style.display = 'none';
+    });
+  });
+
+  if (mobileNavXmlBeat && mobileTabXmlBeat) {
+    mobileNavXmlBeat.addEventListener('click', () => {
+      syncXmlBeatPlacement();
+      document.querySelectorAll('.mobile-tab-content.active').forEach((c) => c.classList.remove('active'));
+      document.querySelectorAll('.mobile-tab.active, .mobile-inspector-pill.active').forEach((t) => t.classList.remove('active'));
+      document.documentElement.classList.remove('inspector-tab-open');
+      mobileTabXmlBeat.classList.add('active');
+      mobileNavXmlBeat.classList.add('active');
+    });
+  }
+
+  document.querySelectorAll('.mobile-tab, #mobileInspectorToggleBtn').forEach((btn) => {
+    if (btn === mobileNavXmlBeat) return;
+    btn.addEventListener('click', () => {
+      if (mobileNavXmlBeat) mobileNavXmlBeat.classList.remove('active');
+      if (mobileTabXmlBeat) mobileTabXmlBeat.classList.remove('active');
+    });
+  });
+
+  window.addEventListener('resize', () => setTimeout(syncXmlBeatPlacement, 60));
+  window.addEventListener('flippy:unlocked', () => setTimeout(syncXmlBeatPlacement, 80));
+  setTimeout(syncXmlBeatPlacement, 140);
+
+  // --- Analyzer & Group Copier State ---
+  const xbFileInput = document.getElementById('xmlBeatFileInput');
+  const xbLoadSampleBtn = document.getElementById('xmlBeatLoadSampleBtn');
+  const xbProjectInfo = document.getElementById('xmlBeatProjectInfo');
+  const xbMarkersList = document.getElementById('xmlBeatMarkersList');
+  const xbGroupSelect = document.getElementById('xmlBeatGroupSelect');
+  const xbStartSelect = document.getElementById('xmlBeatStartSelect');
+  const xbEndSelect = document.getElementById('xmlBeatEndSelect');
+  const xbStartSec = document.getElementById('xmlBeatStartSec');
+  const xbEndSec = document.getElementById('xmlBeatEndSec');
+  const xbLockLenToggle = document.getElementById('xmlBeatLockLenToggle');
+  const xbRangeSummary = document.getElementById('xmlBeatRangeSummary');
+  const xbCopyGroupBtn = document.getElementById('xmlBeatCopyGroupBtn');
+  const xbCloneAllBtn = document.getElementById('xmlBeatCloneAllBtn');
+  const xbActionStatus = document.getElementById('xmlBeatActionStatus');
+  const xbRuler = document.getElementById('xmlBeatRuler');
+  const xbMarkersTrack = document.getElementById('xmlBeatMarkersTrack');
+  const xbTargetRange = document.getElementById('xmlBeatTargetRange');
+  const xbGroupsTrack = document.getElementById('xmlBeatGroupsTrack');
+  const xbOutputCode = document.getElementById('xmlBeatOutputCode');
+  const xbCopyOutBtn = document.getElementById('xmlBeatCopyOutBtn');
+  const xbDownloadOutBtn = document.getElementById('xmlBeatDownloadOutBtn');
+
+  let xbDoc = null;
+  let xbFilename = 'beat_edited.xml';
+  let xbBookmarks = [];
+  let xbGroups = [];
+  let xbTotalMs = 5000;
+
+  // Format ms as 0:00:00 (1..59 seconds -> 0:00:01..0:00:59, 60s -> 0:01:00)
+  function formatAlightClock(ms) {
+    const safeMs = Math.max(0, Math.round(Number(ms) || 0));
+    const totalSec = Math.floor(safeMs / 1000);
+    const hrs = Math.floor(totalSec / 3600);
+    const mins = Math.floor((totalSec % 3600) / 60);
+    const secs = totalSec % 60;
+    return `${hrs}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  }
+
+  function serializeXbDoc() {
+    if (!xbDoc) return '';
+    const raw = new XMLSerializer().serializeToString(xbDoc);
+    return raw.startsWith('<?xml') ? raw : `<?xml version="1.0" encoding="utf-8"?>\n${raw}`;
+  }
+
+  function collectUsedIds(scene) {
+    const ids = new Set();
+    scene.querySelectorAll('[id]').forEach((el) => {
+      const n = parseInt(el.getAttribute('id'), 10);
+      if (!Number.isNaN(n)) ids.add(n);
+    });
+    return ids;
+  }
+
+  function nextUniqueId(usedIds) {
+    let candidate = 100;
+    while (usedIds.has(candidate)) candidate += 1;
+    usedIds.add(candidate);
+    return String(candidate);
+  }
+
+  function cloneGroupForRange(sourceGroup, targetStartMs, targetEndMs, usedIds) {
+    const clone = sourceGroup.cloneNode(true);
+    const origStart = Number(sourceGroup.getAttribute('startTime') || 0);
+    const origEnd = Number(sourceGroup.getAttribute('endTime') || (origStart + 1000));
+    const origDur = Math.max(1, origEnd - origStart);
+    const tStart = Math.max(0, Math.round(targetStartMs));
+    const tEnd = Math.max(tStart + 10, Math.round(targetEndMs));
+    const tDur = tEnd - tStart;
+
+    clone.setAttribute('id', nextUniqueId(usedIds));
+    clone.setAttribute('startTime', String(tStart));
+    clone.setAttribute('endTime', String(tEnd));
+    const baseLabel = sourceGroup.getAttribute('label') || `Group ${sourceGroup.getAttribute('id') || ''}`;
+    clone.setAttribute('label', `${baseLabel} (Copy)`);
+
+    clone.querySelectorAll('[startTime], [endTime], [id]').forEach((child) => {
+      if (child.hasAttribute('id')) child.setAttribute('id', nextUniqueId(usedIds));
+      if (child.hasAttribute('startTime')) {
+        const cs = Number(child.getAttribute('startTime') || origStart);
+        const mapped = tStart + ((cs - origStart) / origDur) * tDur;
+        child.setAttribute('startTime', String(Math.round(Math.max(tStart, Math.min(tEnd, mapped)))));
+      }
+      if (child.hasAttribute('endTime')) {
+        const ce = Number(child.getAttribute('endTime') || origEnd);
+        const mapped = tStart + ((ce - origStart) / origDur) * tDur;
+        child.setAttribute('endTime', String(Math.round(Math.max(tStart + 1, Math.min(tEnd, mapped)))));
+      }
+    });
+    return clone;
+  }
+
+  function updateRangeSummaryAndTimeline() {
+    const sSec = Math.max(0, parseFloat(xbStartSec && xbStartSec.value) || 0);
+    const eSec = Math.max(sSec + 0.01, parseFloat(xbEndSec && xbEndSec.value) || (sSec + 1));
+    const sMs = Math.round(sSec * 1000);
+    const eMs = Math.round(eSec * 1000);
+    const durSec = ((eMs - sMs) / 1000).toFixed(2);
+    if (xbRangeSummary) {
+      xbRangeSummary.textContent = `Range: ${formatAlightClock(sMs)} (${sSec.toFixed(2)}s) → ${formatAlightClock(eMs)} (${eSec.toFixed(2)}s) · Length ${durSec}s`;
+    }
+    if (xbTargetRange && xbTotalMs > 0) {
+      const leftFrac = Math.max(0, Math.min(1, sMs / xbTotalMs));
+      const rightFrac = Math.max(leftFrac + 0.005, Math.min(1, eMs / xbTotalMs));
+      xbTargetRange.style.display = 'block';
+      xbTargetRange.style.left = `calc(38px + (100% - 38px) * ${leftFrac.toFixed(5)})`;
+      xbTargetRange.style.width = `calc((100% - 38px) * ${(rightFrac - leftFrac).toFixed(5)})`;
+    }
+  }
+
+  let xbPlayheadMs = 0;
+  let xbPlaying = false;
+  let xbLoop = true;
+  let xbRafId = null;
+  let xbLastFrameTs = 0;
+
+  function setXbPlayheadMs(ms) {
+    xbPlayheadMs = Math.max(0, Math.min(xbTotalMs || 5000, ms));
+    const frac = xbTotalMs > 0 ? (xbPlayheadMs / xbTotalMs) : 0;
+    const clockText = formatAlightClock(xbPlayheadMs);
+    const playheadLine = document.getElementById('xbPlayheadLine');
+    const playheadBadge = document.getElementById('xbPlayheadBadge');
+    const playheadClock = document.getElementById('xbPlayheadClock');
+    if (playheadLine) playheadLine.style.left = `calc(38px + (100% - 38px) * ${frac.toFixed(5)})`;
+    if (playheadBadge) playheadBadge.textContent = clockText;
+    if (playheadClock) playheadClock.textContent = clockText;
+  }
+
+  function renderXmlBeatUI() {
+    if (!xbDoc) return;
+    const scene = xbDoc.querySelector('scene');
+    if (!scene) return;
+
+    const bookmarkEls = Array.from(scene.querySelectorAll('bookmark'));
+    xbBookmarks = bookmarkEls
+      .map((el, idx) => ({
+        idx,
+        t: Number(el.getAttribute('t') || 0),
+        label: el.getAttribute('label') || `Beat ${idx + 1}`
+      }))
+      .sort((a, b) => a.t - b.t);
+
+    xbGroups = Array.from(scene.querySelectorAll('group'));
+    const maxBookmarkT = xbBookmarks.length ? xbBookmarks[xbBookmarks.length - 1].t : 0;
+    const maxGroupEnd = xbGroups.reduce((m, g) => Math.max(m, Number(g.getAttribute('endTime') || 0)), 0);
+    xbTotalMs = Math.max(Number(scene.getAttribute('totalTime') || 5000), maxBookmarkT, maxGroupEnd, 1000);
+
+    const title = scene.getAttribute('title') || xbFilename;
+    const fps = scene.getAttribute('fps') || '60';
+    if (xbProjectInfo) {
+      xbProjectInfo.textContent = `${title} · ${fps}fps · ${formatAlightClock(xbTotalMs)} (${(xbTotalMs / 1000).toFixed(2)}s) · ${xbBookmarks.length} Beats · ${xbGroups.length} Groups`;
+    }
+
+    // Populate Beat Marker list
+    if (xbMarkersList) {
+      if (!xbBookmarks.length) {
+        xbMarkersList.innerHTML = '<div class="xmlbeat-empty">No &lt;bookmark&gt; beat markers found in this XML.</div>';
+      } else {
+        xbMarkersList.innerHTML = xbBookmarks.map((b, i) => `
+          <div class="xmlbeat-marker-row" data-beat-idx="${i}">
+            <span class="xmlbeat-marker-idx">#${i + 1} · ${b.label}</span>
+            <span class="xmlbeat-marker-clock">${formatAlightClock(b.t)}</span>
+            <span class="xmlbeat-marker-sub">${(b.t / 1000).toFixed(2)}s (${b.t}ms)</span>
+          </div>
+        `).join('');
+        xbMarkersList.querySelectorAll('.xmlbeat-marker-row').forEach((row) => {
+          row.addEventListener('click', () => {
+            const bi = Number(row.getAttribute('data-beat-idx'));
+            if (xbStartSelect && xbBookmarks[bi]) {
+              xbStartSelect.value = String(bi);
+              xbStartSelect.dispatchEvent(new Event('change'));
+            }
+          });
+        });
+      }
+    }
+
+    // Populate Beat Dropdowns
+    if (xbStartSelect && xbEndSelect) {
+      if (xbBookmarks.length) {
+        const opts = xbBookmarks.map((b, i) => `<option value="${i}">Beat #${i + 1} · ${formatAlightClock(b.t)} (${(b.t / 1000).toFixed(2)}s)</option>`).join('');
+        xbStartSelect.innerHTML = opts;
+        xbEndSelect.innerHTML = opts;
+        xbStartSelect.disabled = false;
+        xbEndSelect.disabled = false;
+        xbStartSelect.value = '0';
+        xbEndSelect.value = String(Math.min(1, xbBookmarks.length - 1));
+        if (xbStartSec) xbStartSec.value = (xbBookmarks[0].t / 1000).toFixed(2);
+        const endBeat = xbBookmarks[Math.min(1, xbBookmarks.length - 1)];
+        const fallbackEnd = endBeat.t > xbBookmarks[0].t ? endBeat.t : xbBookmarks[0].t + 1000;
+        if (xbEndSec) xbEndSec.value = (fallbackEnd / 1000).toFixed(2);
+      } else {
+        xbStartSelect.innerHTML = '<option value="">No bookmarks</option>';
+        xbEndSelect.innerHTML = '<option value="">No bookmarks</option>';
+        xbStartSelect.disabled = true;
+        xbEndSelect.disabled = true;
+      }
+    }
+
+    // Populate Group Select
+    if (xbGroupSelect) {
+      if (xbGroups.length) {
+        xbGroupSelect.innerHTML = xbGroups.map((g, i) => {
+          const gs = Number(g.getAttribute('startTime') || 0);
+          const ge = Number(g.getAttribute('endTime') || 0);
+          const label = g.getAttribute('label') || `Group #${g.getAttribute('id') || i + 1}`;
+          return `<option value="${i}">${label} (${formatAlightClock(gs)} → ${formatAlightClock(ge)} · ${((ge - gs) / 1000).toFixed(2)}s)</option>`;
+        }).join('');
+        xbGroupSelect.disabled = false;
+      } else {
+        xbGroupSelect.innerHTML = '<option value="">No &lt;group&gt; elements found</option>';
+        xbGroupSelect.disabled = true;
+      }
+    }
+
+    const canEdit = xbGroups.length > 0;
+    if (xbStartSec) xbStartSec.disabled = !canEdit;
+    if (xbEndSec) xbEndSec.disabled = !canEdit;
+    if (xbCopyGroupBtn) xbCopyGroupBtn.disabled = !canEdit;
+    if (xbCloneAllBtn) xbCloneAllBtn.disabled = !(canEdit && xbBookmarks.length >= 2);
+
+    // Visual Timeline Ruler & Pins
+    if (xbMarkersTrack) {
+      xbMarkersTrack.querySelectorAll('.xmlbeat-marker-pin').forEach((p) => p.remove());
+      xbBookmarks.forEach((b, i) => {
+        const pin = document.createElement('div');
+        pin.className = 'xmlbeat-marker-pin';
+        pin.style.left = `${Math.max(0, Math.min(100, (b.t / xbTotalMs) * 100))}%`;
+        pin.setAttribute('data-label', `#${i + 1} ${formatAlightClock(b.t)}`);
+        pin.title = `Beat #${i + 1}: ${formatAlightClock(b.t)} (${(b.t / 1000).toFixed(2)}s)`;
+        pin.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          setXbPlayheadMs(b.t);
+          if (xbStartSelect) {
+            xbStartSelect.value = String(i);
+            xbStartSelect.dispatchEvent(new Event('change'));
+          }
+        });
+        xbMarkersTrack.appendChild(pin);
+      });
+    }
+
+    // Alight Motion Style Layer Rows (Groups, Shapes, Text, Media + Keyframe Diamonds)
+    if (xbGroupsTrack) {
+      const layerEls = Array.from(scene.children).filter((el) =>
+        ['group', 'shape', 'text', 'media', 'image', 'video', 'nullobj'].includes(el.tagName.toLowerCase())
+      );
+      if (!layerEls.length) {
+        xbGroupsTrack.innerHTML = '<div class="xmlbeat-empty">No timeline layers found in this XML.</div>';
+      } else {
+        xbGroupsTrack.innerHTML = '';
+        layerEls.forEach((layerEl, idx) => {
+          const tag = layerEl.tagName.toLowerCase();
+          const typeClass = tag === 'group' ? 'group' : tag === 'text' ? 'text' : (tag === 'media' || tag === 'image' || tag === 'video') ? 'media' : 'shape';
+          const iconGlyph = typeClass === 'group' ? '↗' : typeClass === 'text' ? 'T' : typeClass === 'media' ? '▣' : '✦';
+          const ls = Number(layerEl.getAttribute('startTime') || 0);
+          const le = Number(layerEl.getAttribute('endTime') || (ls + 500));
+          const left = Math.max(0, Math.min(100, (ls / xbTotalMs) * 100));
+          const width = Math.max(2, Math.min(100 - left, ((le - ls) / xbTotalMs) * 100));
+
+          const row = document.createElement('div');
+          row.className = 'am-tl-row';
+
+          const gutter = document.createElement('div');
+          gutter.className = 'am-tl-gutter';
+          gutter.innerHTML = `<span class="am-tl-icon-badge ${typeClass}">${iconGlyph}</span>`;
+
+          const lane = document.createElement('div');
+          lane.className = 'am-tl-lane';
+
+          const bar = document.createElement('button');
+          bar.type = 'button';
+          const groupIdx = xbGroups.indexOf(layerEl);
+          const isSelectedGroup = groupIdx !== -1 && xbGroupSelect && Number(xbGroupSelect.value) === groupIdx;
+          bar.className = `am-tl-bar type-${typeClass}${isSelectedGroup ? ' selected' : ''}`;
+          bar.style.left = `${left}%`;
+          bar.style.width = `${width}%`;
+          bar.textContent = layerEl.getAttribute('label') || `${tag} ${idx + 1}`;
+          bar.title = `${bar.textContent} · ${formatAlightClock(ls)} → ${formatAlightClock(le)} (${((le - ls) / 1000).toFixed(2)}s)`;
+
+          // Plot keyframe diamonds inside the layer bar
+          const dur = Math.max(1, le - ls);
+          const seenKf = new Set();
+          layerEl.querySelectorAll('keyframe[t]').forEach((kf) => {
+            const kt = Number(kf.getAttribute('t'));
+            if (Number.isNaN(kt) || seenKf.has(kt)) return;
+            seenKf.add(kt);
+            const relPct = Math.max(3, Math.min(97, ((kt - ls) / dur) * 100));
+            const diamond = document.createElement('span');
+            diamond.className = 'am-tl-kf';
+            diamond.style.left = `${relPct}%`;
+            bar.appendChild(diamond);
+          });
+
+          bar.addEventListener('click', () => {
+            setXbPlayheadMs(ls);
+            if (groupIdx !== -1 && xbGroupSelect) {
+              xbGroupSelect.value = String(groupIdx);
+              xbGroupsTrack.querySelectorAll('.am-tl-bar').forEach((b) => b.classList.remove('selected'));
+              bar.classList.add('selected');
+            }
+          });
+
+          lane.appendChild(bar);
+          row.appendChild(gutter);
+          row.appendChild(lane);
+          xbGroupsTrack.appendChild(row);
+        });
+      }
+    }
+
+    const xmlOut = serializeXbDoc();
+    if (xbOutputCode) xbOutputCode.textContent = xmlOut;
+    if (xbCopyOutBtn) xbCopyOutBtn.disabled = !xmlOut;
+    if (xbDownloadOutBtn) xbDownloadOutBtn.disabled = !xmlOut;
+    setXbPlayheadMs(xbPlayheadMs);
+    updateRangeSummaryAndTimeline();
+  }
+
+  function loadAlightXmlString(xmlStr, filename) {
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(xmlStr, 'application/xml');
+      const err = doc.querySelector('parsererror');
+      if (err || !doc.querySelector('scene')) {
+        if (xbActionStatus) xbActionStatus.textContent = 'Invalid Alight Motion XML (missing <scene>).';
+        return;
+      }
+      xbDoc = doc;
+      xbFilename = filename || 'beat_edited.xml';
+      renderXmlBeatUI();
+      if (xbActionStatus) xbActionStatus.textContent = `Loaded ${xbFilename} (${xbBookmarks.length} bookmarks, ${xbGroups.length} groups).`;
+      StudioAudio.playSuccess();
+    } catch (e) {
+      if (xbActionStatus) xbActionStatus.textContent = `Failed to parse XML: ${e.message}`;
+    }
+  }
+
+  if (xbFileInput) {
+    xbFileInput.addEventListener('change', async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      loadAlightXmlString(await file.text(), file.name);
+    });
+  }
+
+  if (xbLoadSampleBtn) {
+    xbLoadSampleBtn.addEventListener('click', () => {
+      const sampleXml = `<?xml version="1.0" encoding="utf-8"?>
+<scene title="FL-5 Beat Demo" width="1080" height="1920" exportWidth="1080" exportHeight="1920" fps="60" totalTime="62000" bgcolor="#ff000000">
+  <bookmark t="1000" label="Beat 1" />
+  <bookmark t="2500" label="Beat 2" />
+  <bookmark t="4200" label="Beat 3" />
+  <bookmark t="60000" label="1 Min Mark" />
+  <group id="10" label="3D Flip Group" startTime="1000" endTime="2500">
+    <shape id="11" label="Card A" startTime="1000" endTime="2500" fillType="color" s=".rect">
+      <fillColor value="#ff5d866c" />
+    </shape>
+  </group>
+</scene>`;
+      loadAlightXmlString(sampleXml, 'fl5_beat_demo.xml');
+    });
+  }
+
+  if (xbStartSelect) {
+    xbStartSelect.addEventListener('change', () => {
+      const i = Number(xbStartSelect.value);
+      const b1 = xbBookmarks[i];
+      if (!b1) return;
+      if (xbStartSec) xbStartSec.value = (b1.t / 1000).toFixed(2);
+      const nextIdx = Math.min(i + 1, xbBookmarks.length - 1);
+      if (xbEndSelect && xbLockLenToggle && xbLockLenToggle.checked) {
+        xbEndSelect.value = String(nextIdx);
+      }
+      const b2 = xbBookmarks[Number(xbEndSelect ? xbEndSelect.value : nextIdx)];
+      if (b2 && b2.t > b1.t && xbEndSec) {
+        xbEndSec.value = (b2.t / 1000).toFixed(2);
+      }
+      updateRangeSummaryAndTimeline();
+    });
+  }
+
+  if (xbEndSelect) {
+    xbEndSelect.addEventListener('change', () => {
+      const b2 = xbBookmarks[Number(xbEndSelect.value)];
+      if (b2 && xbEndSec) {
+        xbEndSec.value = (b2.t / 1000).toFixed(2);
+        updateRangeSummaryAndTimeline();
+      }
+    });
+  }
+
+  if (xbStartSec) {
+    xbStartSec.addEventListener('input', () => {
+      if (xbLockLenToggle && xbLockLenToggle.checked && xbBookmarks.length >= 2) {
+        const i1 = Number(xbStartSelect ? xbStartSelect.value : 0);
+        const i2 = Number(xbEndSelect ? xbEndSelect.value : Math.min(1, xbBookmarks.length - 1));
+        const b1 = xbBookmarks[i1];
+        const b2 = xbBookmarks[i2];
+        if (b1 && b2 && b2.t > b1.t && xbEndSec) {
+          const beatDurSec = (b2.t - b1.t) / 1000;
+          xbEndSec.value = ((parseFloat(xbStartSec.value) || 0) + beatDurSec).toFixed(2);
+        }
+      }
+      updateRangeSummaryAndTimeline();
+    });
+  }
+  if (xbEndSec) xbEndSec.addEventListener('input', updateRangeSummaryAndTimeline);
+
+  if (xbCopyGroupBtn) {
+    xbCopyGroupBtn.addEventListener('click', () => {
+      if (!xbDoc || !xbGroups.length) return;
+      const scene = xbDoc.querySelector('scene');
+      const srcGroup = xbGroups[Number(xbGroupSelect ? xbGroupSelect.value : 0)];
+      if (!scene || !srcGroup) return;
+
+      const sMs = Math.max(0, Math.round((parseFloat(xbStartSec && xbStartSec.value) || 0) * 1000));
+      let eMs = Math.max(sMs + 10, Math.round((parseFloat(xbEndSec && xbEndSec.value) || (sMs / 1000 + 1)) * 1000));
+      if (xbLockLenToggle && xbLockLenToggle.checked && xbBookmarks.length >= 2) {
+        const b1 = xbBookmarks[Number(xbStartSelect ? xbStartSelect.value : 0)];
+        const b2 = xbBookmarks[Number(xbEndSelect ? xbEndSelect.value : 1)];
+        if (b1 && b2 && b2.t > b1.t) eMs = sMs + (b2.t - b1.t);
+      }
+
+      const usedIds = collectUsedIds(scene);
+      const cloned = cloneGroupForRange(srcGroup, sMs, eMs, usedIds);
+      scene.appendChild(cloned);
+      if (eMs > Number(scene.getAttribute('totalTime') || 0)) {
+        scene.setAttribute('totalTime', String(eMs));
+      }
+      renderXmlBeatUI();
+      if (xbActionStatus) {
+        xbActionStatus.textContent = `Copied group to ${formatAlightClock(sMs)} → ${formatAlightClock(eMs)} (${((eMs - sMs) / 1000).toFixed(2)}s).`;
+      }
+      StudioAudio.playSuccess();
+    });
+  }
+
+  if (xbCloneAllBtn) {
+    xbCloneAllBtn.addEventListener('click', () => {
+      if (!xbDoc || !xbGroups.length || xbBookmarks.length < 2) return;
+      const scene = xbDoc.querySelector('scene');
+      const srcGroup = xbGroups[Number(xbGroupSelect ? xbGroupSelect.value : 0)];
+      if (!scene || !srcGroup) return;
+
+      const usedIds = collectUsedIds(scene);
+      let count = 0;
+      for (let i = 0; i < xbBookmarks.length - 1; i += 1) {
+        const t1 = xbBookmarks[i].t;
+        const t2 = xbBookmarks[i + 1].t;
+        if (t2 > t1) {
+          scene.appendChild(cloneGroupForRange(srcGroup, t1, t2, usedIds));
+          count += 1;
+        }
+      }
+      renderXmlBeatUI();
+      if (xbActionStatus) xbActionStatus.textContent = `Cloned group across ${count} beat intervals with matching beat lengths.`;
+      StudioAudio.playSuccess();
+    });
+  }
+
+  if (xbCopyOutBtn) {
+    xbCopyOutBtn.addEventListener('click', async () => {
+      const xmlOut = serializeXbDoc();
+      if (!xmlOut) return;
+      try {
+        await navigator.clipboard.writeText(xmlOut);
+        if (xbActionStatus) xbActionStatus.textContent = 'Copied modified XML to clipboard.';
+        StudioAudio.playClick();
+      } catch (e) {}
+    });
+  }
+
+  if (xbDownloadOutBtn) {
+    xbDownloadOutBtn.addEventListener('click', () => {
+      const xmlOut = serializeXbDoc();
+      if (!xmlOut) return;
+      const blob = new Blob([xmlOut], { type: 'application/xml;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = xbFilename.replace(/\.xml$/i, '') + '_beats.xml';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        URL.revokeObjectURL(a.href);
+        a.remove();
+      }, 250);
+      StudioAudio.playClick();
+    });
+  }
+
+  // Smooth Arrow Dropdown for Modified Alight Motion XML
+  const xbOutputCard = document.getElementById('xmlBeatOutputCard');
+  const xbOutputToggle = document.getElementById('xmlBeatOutputToggle');
+  if (xbOutputToggle && xbOutputCard) {
+    xbOutputToggle.addEventListener('click', () => {
+      const isOpen = xbOutputCard.classList.toggle('open');
+      xbOutputToggle.setAttribute('aria-expanded', String(isOpen));
+      StudioAudio.playClick();
+    });
+  }
+
+  // Alight Motion Timeline Transport, Scrubbing & Zoom
+  const xbPlayBtn = document.getElementById('xbPlayBtn');
+  const xbLoopBtn = document.getElementById('xbLoopBtn');
+  const xbPrevBeatBtn = document.getElementById('xbPrevBeatBtn');
+  const xbNextBeatBtn = document.getElementById('xbNextBeatBtn');
+  const xbZoomSelect = document.getElementById('xbZoomSelect');
+  const xbAmStage = document.getElementById('xbAmStage');
+
+  function updatePlayBtnIcons() {
+    if (!xbPlayBtn) return;
+    const p = xbPlayBtn.querySelector('.xb-icon-play');
+    const s = xbPlayBtn.querySelector('.xb-icon-pause');
+    if (p) p.style.display = xbPlaying ? 'none' : 'block';
+    if (s) s.style.display = xbPlaying ? 'block' : 'none';
+  }
+
+  function stepXbPlayback(ts) {
+    if (!xbPlaying) return;
+    if (!xbLastFrameTs) xbLastFrameTs = ts;
+    const dt = ts - xbLastFrameTs;
+    xbLastFrameTs = ts;
+    let next = xbPlayheadMs + dt;
+    if (next >= xbTotalMs) {
+      if (xbLoop) {
+        next = 0;
+      } else {
+        next = xbTotalMs;
+        xbPlaying = false;
+        updatePlayBtnIcons();
+      }
+    }
+    setXbPlayheadMs(next);
+    if (xbPlaying) xbRafId = requestAnimationFrame(stepXbPlayback);
+  }
+
+  if (xbPlayBtn) {
+    xbPlayBtn.addEventListener('click', () => {
+      xbPlaying = !xbPlaying;
+      if (xbPlaying) {
+        if (xbPlayheadMs >= xbTotalMs) xbPlayheadMs = 0;
+        xbLastFrameTs = 0;
+        xbRafId = requestAnimationFrame(stepXbPlayback);
+      } else {
+        cancelAnimationFrame(xbRafId);
+      }
+      updatePlayBtnIcons();
+      StudioAudio.playClick();
+    });
+  }
+
+  if (xbLoopBtn) {
+    xbLoopBtn.addEventListener('click', () => {
+      xbLoop = !xbLoop;
+      xbLoopBtn.classList.toggle('active', xbLoop);
+      StudioAudio.playClick();
+    });
+  }
+
+  if (xbPrevBeatBtn) {
+    xbPrevBeatBtn.addEventListener('click', () => {
+      const prev = [...xbBookmarks].reverse().find((b) => b.t < xbPlayheadMs - 30);
+      setXbPlayheadMs(prev ? prev.t : 0);
+      StudioAudio.playClick();
+    });
+  }
+
+  if (xbNextBeatBtn) {
+    xbNextBeatBtn.addEventListener('click', () => {
+      const next = xbBookmarks.find((b) => b.t > xbPlayheadMs + 30);
+      setXbPlayheadMs(next ? next.t : xbTotalMs);
+      StudioAudio.playClick();
+    });
+  }
+
+  if (xbZoomSelect && xbAmStage) {
+    xbZoomSelect.addEventListener('change', () => {
+      const z = Math.max(1, Number(xbZoomSelect.value) || 1);
+      xbAmStage.style.width = `${z * 100}%`;
+      StudioAudio.playClick();
+    });
+  }
+
+  if (xbRuler) {
+    const scrubFromClientX = (clientX) => {
+      const rect = xbRuler.getBoundingClientRect();
+      if (!rect.width) return;
+      const frac = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      setXbPlayheadMs(frac * xbTotalMs);
+    };
+    let scrubbing = false;
+    xbRuler.addEventListener('pointerdown', (e) => {
+      scrubbing = true;
+      scrubFromClientX(e.clientX);
+    });
+    window.addEventListener('pointermove', (e) => {
+      if (scrubbing) scrubFromClientX(e.clientX);
+    });
+    window.addEventListener('pointerup', () => {
+      scrubbing = false;
+    });
+  }
 })();

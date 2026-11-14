@@ -1234,3 +1234,69 @@ At the end of every prompt where changes are made:
   - Simplified `styles.css` `data-inspector="tab"` rules to hide `#mobileFloatingInspector` and render `#mobileInspectorPageSlot .controls-body` as a full-page vertical settings layout.
 - **Invariants / Rules to uphold for future turns**:
   - `data-inspector="tab"` is the default on mobile; Inspector and Wipe Studio must never co-exist when Inspector is opened in tab mode.
+
+
+### 2026-11-12T20:46:00-06:00
+- **Operator Request**: Add an Alight Motion share link (`alightcreative.com/am/share/...`) to Alight Motion XML converter in the website.
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\server.js`
+  - `C:\Users\jeduc\Downloads\Flippy v5\index.html`
+  - `C:\Users\jeduc\Downloads\Flippy v5\fx.js`
+- **Specific Adjustments Made**:
+  - Added `GET /__fl5_am_link?url=...` in `server.js` (allowlisted to `alightcreative.com`, `alight.link`, `alight-creative.appspot.com`) to fetch share pages and parse `og:title`, `og:description`, `og:image`, UID, project ID, and Alight version metadata (`amVersionCode`, `amVersionString`, `maxFFVer`).
+  - Added `#amLinkConverterCard` inside `#converter-panel` (works on both Desktop Converter tab and Mobile `#mobileTabConverter`) with `#amShareLinkInput`, `#amLinkConvertBtn`, `#amProjFileInput` (`.amproj` / `.xml` loader), live metadata preview (`#amLinkMetaCard`), XML preview (`#amLinkXmlCode`), `#amLinkDownloadXmlBtn`, and `#amLinkCopyXmlBtn`.
+  - Added Section 8 in `fx.js` to handle share-link resolution, XML generation (`buildAlightProjectXml`), `.amproj`/`.xml` extraction, clipboard copy, and `.xml` download.
+- **Invariants / Rules to uphold for future turns**:
+  - Restrict `/__fl5_am_link` to Alight Creative domains only and clearly inform users that public share URLs expose metadata only unless an exported `.amproj`/`.xml` file is loaded.
+
+
+### 2026-11-12T20:48:15-06:00
+- **Operator Request**: Move the Alight Link → XML converter into its own dedicated tab and style its GUI to match the website's native design system.
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\index.html`
+  - `C:\Users\jeduc\Downloads\Flippy v5\fx.js`
+- **Specific Adjustments Made**:
+  - Added `#navTabAmLink` ("Link to XML") in `#appNavTabs` and `#mobileNavAmLink` ("Link XML") + `#mobileTabAmLink` (`#mobileAmLinkSlot`) in the mobile shell.
+  - Moved the converter out of `#converter-panel` into its own `<section class="panel converter-panel" id="amlink-panel">` using the website's exact native classes (`.panel-header`, `.ph-icon`, `.ph-text`, `.converter-header-actions`, `.ph-btn`, `.ph-btn.primary`, `.converter-layout`, `.converter-col`, `.converter-card`, `.step-index-tag`, `.xml-dropzone`, `.converter-xml-preview`).
+  - Wired `#navTabAmLink`, `#mobileNavAmLink`, and `syncAmLinkPlacement()` in `fx.js` so switching between Desktop and Mobile moves `#amlink-panel` cleanly and keeps all tabs mutually exclusive.
+- **Invariants / Rules to uphold for future turns**:
+  - Keep `#amlink-panel` using the `.converter-panel` / `.converter-layout` / `.converter-card` design system so it stays visually consistent with Media Converter.
+
+
+### 2026-11-12T20:53:10-06:00
+- **Operator Request**: Add a quick fade-in/fade-out transition when switching tabs and a smooth bounce tweening animation (position, rotation, and size displacement back to rest) for the main UI buttons after unlocking the password screen.
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\styles.css`
+  - `C:\Users\jeduc\Downloads\Flippy v5\fx.js`
+- **Specific Adjustments Made**:
+  - Added `@keyframes fl5TabFadeIn` (`.tab-fade-enter`, `0.26s cubic-bezier(0.22, 1, 0.36, 1)`) and `@keyframes fl5UnlockBounce` (`0.62s cubic-bezier(0.34, 1.56, 0.64, 1)` displacing `translateY`, `--unlock-rot`, and `scale(0.8) → 1.04 → 1.0`) with `prefers-reduced-motion: reduce` support in `styles.css`.
+  - Added Section 9 in `fx.js` triggering `.tab-fade-enter` on `flippy:tabswitched` and mobile tab clicks, and triggering staggered `html.fl5-unlock-bounce` across `.nav-tab`, `.header-right > *`, `.mobile-tab`, `.mobile-inspector-pill`, `.mobile-header-right > *`, `.module`, and `.converter-card` on `flippy:unlocked`.
+- **Invariants / Rules to uphold for future turns**:
+  - Keep `fl5UnlockBounce` scoped to individual buttons/cards (never `.mobile-shell`) so mobile fixed/sticky positioning stays stable.
+
+
+### 2026-11-13T22:35:32-06:00
+- **Operator Request**: Add a new tab in FL-5 that analyzes Alight Motion XML `<bookmark>` beat markers (converting `ms` to `0:00:00` where 1–60s rolls over to `0:01:00`), displays a visual timeline, and lets users select and copy `<group>` layers with custom start/end seconds and beat-matched lengths (`Beat #1 → Beat #2`), styled to match the native FL-5 GUI.
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\index.html`
+  - `C:\Users\jeduc\Downloads\Flippy v5\styles.css`
+  - `C:\Users\jeduc\Downloads\Flippy v5\fx.js`
+- **Specific Adjustments Made**:
+  - Added `#navTabXmlBeatTool` ("Beat Groups") + `#xmlbeat-panel` on desktop and `#mobileNavXmlBeatTool` ("Beat XML") + `#mobileTabXmlBeatTool` on mobile in `index.html` using native `.converter-panel`, `.panel-header`, `.converter-layout`, `.converter-card`, `.xml-dropzone`, and `.converter-xml-preview` components.
+  - Added `.xmlbeat-timeline-wrap`, `.xmlbeat-marker-pin`, `.xmlbeat-target-range`, `.xmlbeat-group-bar`, and `.xmlbeat-marker-list` styles in `styles.css` matching the Liquid Glass × `#5D866C` theme.
+  - Added Section 10 in `fx.js`: `formatAlightClock(ms)` (`0:00:00` → `0:01:00`), `<bookmark>` & `<group>` XML parser, interactive visual timeline, beat-interval dropdowns + seconds inputs with `Lock copied group length to Beat #1 → Beat #2 duration`, `cloneGroupForRange()` (unique IDs + proportional child timing), **Clone Across All Beats**, **Copy XML**, **Download XML**, and **Load Demo Beat XML**.
+- **Invariants / Rules to uphold for future turns**:
+  - Always regenerate unique `id` attributes on cloned `<group>` elements and their descendants so Alight Motion XML imports cleanly without ID collisions.
+
+
+### 2026-11-13T22:39:42-06:00
+- **Operator Request**: Add a smooth arrow dropdown to show/hide the Modified Alight Motion XML output, and upgrade the visual timeline to an accurate Alight Motion timeline view matching the reference screenshot.
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\index.html`
+  - `C:\Users\jeduc\Downloads\Flippy v5\styles.css`
+  - `C:\Users\jeduc\Downloads\Flippy v5\fx.js`
+- **Specific Adjustments Made**:
+  - Added `#xmlBeatOutputToggle` + `#xmlBeatOutputCollapse` in `index.html` and CSS `grid-template-rows: 0fr → 1fr` + chevron rotation (`0.36s cubic-bezier(0.22, 1, 0.36, 1)`) in `styles.css` for smooth tweened expand/collapse of the Modified Alight Motion XML output.
+  - Upgraded `#xmlBeatTimelineWrap` into an Alight Motion-style timeline view (`am-tl-shell`) with transport bar (Play/Pause, Previous/Next Beat, Loop, live `0:00:00` timecode, `1x/2x/4x` zoom), tick-mark ruler with scrubbable white playhead line + red `<bookmark>` pins, sticky left layer icon gutter, color-coded rounded layer bars (`group` coral, `shape` cyan, `text` gold, `media` purple) with `≡` grips, and white keyframe diamonds (`◆`).
+- **Invariants / Rules to uphold for future turns**:
+  - Keep the `38px` left gutter offset synchronized across `#xbPlayheadLine` and `#xmlBeatTargetRange`.
