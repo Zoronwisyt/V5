@@ -1364,3 +1364,30 @@ At the end of every prompt where changes are made:
   - Verified `fx.js` syntax with `node --check` (exit code 0).
 - **Invariants / Rules to Uphold**:
   - Respect the user's selected Start and End bookmark range when cloning alternating VS groups.
+
+### 2026-11-14 — Simplify Beat Groups Tab to VS Edit Only
+- **Operator Request**: Remove the "Copy Group Between Beats" section in the Beat Groups tab, and remove the "Copy Category + Winner" button in the VS Edit · Category & Winner section so "Clone VS Across Beats" is the only button.
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\index.html`
+- **Specific Adjustments Made**:
+  - Removed card `03 · Copy Group Between Beats` from `#xmlbeat-panel` in `index.html`.
+  - Removed `#xbVsCopyPairBtn` (`Copy Category + Winner`) from the `VS Edit · Category & Winner` card, leaving `#xbVsCloneAllBtn` (`Clone VS Across Beats`) as the sole primary button, and preserved `#xmlBeatActionStatus` inside the card for status feedback.
+- **Invariants / Rules to Uphold**:
+  - Keep `#xmlBeatActionStatus` present in `#xmlbeat-panel` so `fx.js` status updates remain visible.
+
+### 2026-11-14 — Disable Link to XML Tab & Polish Beat Groups Timeline
+- **Operator Request**: Gray out the Link to XML tab with a black diagonal slash so it is temporarily inaccessible, and fix the scuffed visual timeline in Beat Groups.
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\index.html`
+  - `C:\Users\jeduc\Downloads\Flippy v5\styles.css`
+  - `C:\Users\jeduc\Downloads\Flippy v5\fx.js`
+- **Specific Adjustments Made**:
+  - Added `tab-disabled-slash`, `disabled`, and `aria-disabled="true"` to `#navTabAmLink` and `#mobileNavAmLink` in `index.html`, and styled `.tab-disabled-slash` in `styles.css` (grayed out with `pointer-events: none` and a black diagonal `::after` slash).
+  - Fixed Beat Groups timeline overlap in `styles.css`:
+    - Hid `.am-tl-bookmarks .xmlbeat-marker-pin::after` labels by default and revealed them on hover so red bookmark pins don't form an overlapping wall of text.
+    - Repositioned `.am-tl-playhead-badge` inside the timeline body (`top: 4px; left: 4px; transform: none;`) so it no longer overlaps the `Layers` gutter header.
+    - Switched `.am-tl-bar` to `display: block; line-height: 24px; padding: 0 24px 0 8px;` so layer names truncate cleanly with ellipsis before the `≡` handle.
+  - Added `applyXbTimelineZoom()` in `fx.js` (called on `renderXmlBeatUI()` and zoom changes) to scale `#xbAmStage` width dynamically (`max(520, totalSec * 65) * zoom`) for readable beat spacing.
+  - Verified `fx.js` syntax with `node --check` (exit code 0).
+- **Invariants / Rules to Uphold**:
+  - Keep `#navTabAmLink` and `#mobileNavAmLink` non-interactive until re-enabled by the user.

@@ -169,7 +169,7 @@
           </svg>
           <span>Media Converter</span>
         </button>
-        <button class="nav-tab" data-tab="amlink" id="navTabAmLink" type="button">
+        <button class="nav-tab tab-disabled-slash" data-tab="amlink" id="navTabAmLink" type="button" disabled aria-disabled="true" title="Link to XML is temporarily disabled">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
             <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
@@ -1640,54 +1640,6 @@
 
           <div class="converter-card">
             <div class="card-title">
-              <span class="step-index-tag">03</span>
-              Copy Group Between Beats
-            </div>
-            <div class="control-group" style="margin-top: 8px;">
-              <label class="field-label" for="xmlBeatGroupSelect">Group to Copy</label>
-              <select id="xmlBeatGroupSelect" class="styled-input" disabled>
-                <option value="">Import XML with &lt;group&gt; layers first</option>
-              </select>
-            </div>
-
-            <div class="xmlbeat-grid-2">
-              <div class="control-group">
-                <label class="field-label" for="xmlBeatStartSelect">Start Beat (#1)</label>
-                <select id="xmlBeatStartSelect" class="styled-input" disabled></select>
-              </div>
-              <div class="control-group">
-                <label class="field-label" for="xmlBeatEndSelect">End Beat (#2)</label>
-                <select id="xmlBeatEndSelect" class="styled-input" disabled></select>
-              </div>
-            </div>
-
-            <div class="xmlbeat-grid-2">
-              <div class="control-group">
-                <label class="field-label" for="xmlBeatStartSec">Start (seconds)</label>
-                <input type="number" id="xmlBeatStartSec" class="styled-input" step="0.01" min="0" value="0" disabled>
-              </div>
-              <div class="control-group">
-                <label class="field-label" for="xmlBeatEndSec">End (seconds)</label>
-                <input type="number" id="xmlBeatEndSec" class="styled-input" step="0.01" min="0" value="1" disabled>
-              </div>
-            </div>
-
-            <label class="xmlbeat-check">
-              <input type="checkbox" id="xmlBeatLockLenToggle" checked>
-              <span>Lock copied group length to Beat #1 &rarr; Beat #2 duration</span>
-            </label>
-
-            <div id="xmlBeatRangeSummary" class="xmlbeat-range-pill">Range: 0:00:00 &rarr; 0:00:01 (1.00s)</div>
-
-            <div style="display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;">
-              <button class="ph-btn primary" id="xmlBeatCopyGroupBtn" type="button" disabled style="flex: 1; justify-content: center;">Copy Group to Range</button>
-              <button class="ph-btn" id="xmlBeatCloneAllBtn" type="button" disabled style="flex: 1; justify-content: center;">Clone Across All Beats</button>
-            </div>
-            <div id="xmlBeatActionStatus" class="conv-status" style="margin-top: 8px;"></div>
-          </div>
-
-          <div class="converter-card">
-            <div class="card-title">
               <span class="step-index-tag">VS</span>
               VS Edit · Category &amp; Winner
             </div>
@@ -1739,10 +1691,10 @@
 
             <div id="xbVsSummary" class="xmlbeat-range-pill">Category: 0:00:00 → 0:00:01 · Winner: 0:00:01 → 0:00:02</div>
 
-            <div style="display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;">
-              <button class="ph-btn primary" id="xbVsCopyPairBtn" type="button" disabled style="flex: 1; justify-content: center;">Copy Category + Winner</button>
-              <button class="ph-btn" id="xbVsCloneAllBtn" type="button" disabled style="flex: 1; justify-content: center;">Clone VS Across Beats</button>
+            <div style="display: flex; gap: 8px; margin-top: 10px;">
+              <button class="ph-btn primary" id="xbVsCloneAllBtn" type="button" disabled style="flex: 1; justify-content: center;">Clone VS Across Beats</button>
             </div>
+            <div id="xmlBeatActionStatus" class="conv-status" style="margin-top: 8px;"></div>
           </div>
         </div>
 
@@ -3270,7 +3222,7 @@
         </svg>
         <span>Media Converter</span>
       </button>
-      <button class="mobile-tab" id="mobileNavAmLink" type="button">
+      <button class="mobile-tab tab-disabled-slash" id="mobileNavAmLink" type="button" disabled aria-disabled="true" title="Link to XML is temporarily disabled">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
           <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>

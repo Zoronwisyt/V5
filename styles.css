@@ -6363,6 +6363,17 @@ html.fl5-unlock-bounce .converter-card {
   left: 4px;
   font-size: 9px;
   color: #ff9ca5;
+  background: rgba(20, 23, 36, 0.92);
+  padding: 1px 4px;
+  border-radius: 3px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+  z-index: 9;
+}
+
+.am-tl-bookmarks .xmlbeat-marker-pin:hover::after {
+  opacity: 1;
 }
 
 .am-tl-body {
@@ -6390,14 +6401,14 @@ html.fl5-unlock-bounce .converter-card {
 
 .am-tl-playhead-badge {
   position: absolute;
-  top: -19px;
-  left: 50%;
-  transform: translateX(-50%);
+  top: 4px;
+  left: 4px;
+  transform: none;
   font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 700;
   color: #ffffff;
-  background: #141724;
+  background: rgba(20, 23, 36, 0.9);
   padding: 1px 5px;
   border-radius: 4px;
   white-space: nowrap;
@@ -6461,9 +6472,9 @@ html.fl5-unlock-bounce .converter-card {
   bottom: 2px;
   min-width: 22px;
   border-radius: 6px;
-  padding: 0 22px 0 8px;
-  display: flex;
-  align-items: center;
+  padding: 0 24px 0 8px;
+  display: block;
+  line-height: 24px;
   font-size: 11px;
   font-weight: 700;
   color: #11151f;
@@ -6505,4 +6516,28 @@ html.fl5-unlock-bounce .converter-card {
   border: 1px solid rgba(17, 21, 31, 0.45);
   transform: translate(-50%, -50%) rotate(45deg);
   pointer-events: none;
+}
+
+/* Temporarily disabled Link to XML tab (grayed out with black diagonal slash) */
+.tab-disabled-slash {
+  opacity: 0.45 !important;
+  filter: grayscale(1) !important;
+  pointer-events: none !important;
+  cursor: not-allowed !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.tab-disabled-slash::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 120%;
+  height: 2.5px;
+  background: #000000;
+  box-shadow: 0 0 2px rgba(255, 255, 255, 0.25);
+  transform: translate(-50%, -50%) rotate(-28deg);
+  pointer-events: none;
+  z-index: 4;
 }

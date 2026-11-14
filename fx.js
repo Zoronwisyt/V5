@@ -1579,6 +1579,7 @@
         : 'Import an Alight Motion XML to enable separate Beat Groups export.';
     }
     setXbPlayheadMs(xbPlayheadMs);
+    if (typeof applyXbTimelineZoom === 'function') applyXbTimelineZoom();
     updateRangeSummaryAndTimeline();
   }
 
@@ -1845,10 +1846,16 @@
     });
   }
 
+  function applyXbTimelineZoom() {
+    if (!xbAmStage) return;
+    const z = Math.max(1, Number(xbZoomSelect && xbZoomSelect.value) || 1);
+    const basePx = Math.max(520, Math.round((xbTotalMs / 1000) * 65));
+    xbAmStage.style.width = `${Math.round(basePx * z)}px`;
+  }
+
   if (xbZoomSelect && xbAmStage) {
     xbZoomSelect.addEventListener('change', () => {
-      const z = Math.max(1, Number(xbZoomSelect.value) || 1);
-      xbAmStage.style.width = `${z * 100}%`;
+      applyXbTimelineZoom();
       StudioAudio.playClick();
     });
   }
