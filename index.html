@@ -7,9 +7,11 @@
   <meta name="description" content="Build multi-layer wipes, connected masks, 3D flips, cubes, and Box V2 3D effects for Alight Motion XML.">
   <meta name="color-scheme" content="light dark">
   <meta name="theme-color" content="#070e0a" id="metaThemeColor">
+  <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
   <link rel="icon" type="image/png" href="favicon.png">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="FL-5">
@@ -3391,7 +3393,14 @@
   <!-- GSAP & ScrollTrigger for Staggered Card Entrances -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-  <script src="clipcut_browser.js?v=1.0"></script>
-  <script src="fx.js?v=5.3"></script>
+  <script src="clipcut_browser.js?v=2.3"></script>
+  <script src="fx.js?v=5.4"></script>
+  <script>
+    if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.protocol === 'http:')) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+  </script>
 </body>
 </html>

@@ -1535,3 +1535,61 @@ At the end of every prompt where changes are made:
 - **Invariants / Rules to Uphold**:
   - Keep `#xmlBeatManualPanel` collapsed by default so the GUI remains clean until `Manual` is clicked.
   - Use `<bookmark t="<ms>" label="..." />` so Alight Motion and `#xmlbeat-panel` parse beat timestamps accurately.
+
+### 2026-11-15 — ClipCutNetV2 Exact-Frame Midpoint Seeking, Score-Descending NMS & Clipcut 2 test.xml Alignment
+- **Operator Request**: Fix 1–2 frame bookmark offsets in `Clipcut 2 test.xml` (`Yor Vs Shinobu Prob3.mp4`) and improve clip-cut alignment for "Who is Strongest" edits (`Category` stacked vs `Winner` fullscreen).
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\clip_beat_marker\features.py`
+  - `C:\Users\jeduc\Downloads\Flippy v5\clip_beat_marker\train_model.py`
+  - `C:\Users\jeduc\Downloads\Flippy v5\clip_beat_marker\model.pt`
+  - `C:\Users\jeduc\Downloads\Flippy v5\clip_beat_marker\model.json`
+  - `C:\Users\jeduc\Downloads\Flippy v5\clip_beat_marker\detect_cuts.py`
+  - `C:\Users\jeduc\Downloads\Flippy v5\clipcut_browser.js`
+  - `C:\Users\jeduc\Downloads\Flippy v5\index.html`
+  - `c:\Users\jeduc\Downloads\Clipcut 2 test.xml`
+- **Specific Adjustments Made**:
+  - Updated `clipcut_browser.js` frame seeking from `i / fps` to exact frame midpoint `(i + 0.5) / fps` so HTMLVideoElement seeking avoids +1 frame container PTS boundary rounding drift.
+  - Replaced greedy left-to-right threshold picking in both `clip_beat_marker/detect_cuts.py` and `clipcut_browser.js` with score-descending Non-Maximum Suppression (NMS) ranked by `p + 0.25 * inst_full_h + 0.25 * inst_full_l` (`prob_threshold = 0.75`, `min_gap_sec = 0.25`) so true sharp cut frames always win over `i±1..2` shoulder frames whose temporal persistence probabilities exceed threshold.
+  - Bumped `clipcut_browser.js?v=2.0` -> `clipcut_browser.js?v=2.1` in `index.html`.
+  - Regenerated `c:\Users\jeduc\Downloads\Clipcut 2 test.xml` (`1080×1350`, `60fps`, 34 bookmarks) from `C:\Users\jeduc\Videos\Handbrake\Yor Vs Shinobu Prob3.mp4` via `detect_cuts.py`.
+  - Verified `node --check clipcut_browser.js`, `python -m py_compile clip_beat_marker/detect_cuts.py`, and confirmed aligned bookmark timestamps (`5567`, `8667`, `16950`, `18517`, `19017`, `20067`, `20583`) in `Clipcut 2 test.xml`.
+- **Invariants / Rules to Uphold**:
+  - Always seek HTMLVideoElement to `(i + 0.5) / fps` rather than `i / fps` during frame-by-frame browser inference.
+  - Keep peak selection score-descending (NMS) weighted by instantaneous frame change (`inst_full_h` + `inst_full_l`) whenever probability shoulders extend `±1..2` frames around a cut.
+
+
+### 2026-11-15 — Retrain ClipCutNetV2 with `Test Training` (`0404` + `Beat Markers.txt`) & Fix 1ms Alight Motion Frame-Ceiling Rounding (`...34` / `...84`)
+- **Operator Request**: Use `C:\Users\jeduc\Downloads\Test Training` (`0404 (2)(1) 1 Rhea1(1).mp4` + `Beat Markers.txt`) to train the model further and fix the 1ms offset on bookmarks when auto-splitting into XML (`C:\Users\jeduc\Downloads\Test Training\Clipcut test 3.xml`).
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\clip_beat_marker\train_model.py`
+  - `C:\Users\jeduc\Downloads\Flippy v5\clip_beat_marker\detect_cuts.py`
+  - `C:\Users\jeduc\Downloads\Flippy v5\clip_beat_marker\model.pt`
+  - `C:\Users\jeduc\Downloads\Flippy v5\clip_beat_marker\model.json`
+  - `C:\Users\jeduc\Downloads\Flippy v5\clipcut_browser.js`
+  - `C:\Users\jeduc\Downloads\Flippy v5\index.html`
+  - `C:\Users\jeduc\Downloads\Test Training\Clipcut test 3.xml`
+  - `c:\Users\jeduc\Downloads\Clipcut 2 test.xml`
+- **Specific Adjustments Made**:
+  - Upgraded `train_model.py` with score-descending NMS peak selection (`rank_score = gated_score + 0.35 * inst_full + 0.20 * inst_half`) and `apply_beat_markers_txt()` to parse `HH:MM:SS:FF` ground-truth markers from `Beat Markers.txt` (`28` aligned ground-truth cuts at `-1886` frames offset on `0404 (2)(1) 1 Rhea1(1).mp4`).
+  - Retrained `ClipCutNetV2` across all 7 videos (`250` epochs), reducing loss from `0.2366` to `0.0094` (`TP=197, FP=9, FN=1`), and embedded the new weights into `clipcut_browser.js` (`v=2.2`).
+  - Fixed the 1ms Alight Motion frame-boundary offset in both `detect_cuts.py` and `clipcut_browser.js` by replacing `round(t_sec * 1000)` with `ceil((frame_idx * 1000) / fps - 1e-9)`. At `60fps`, frames where `frame % 3 == 2` (`33.333ms` / `83.333ms`) now export as `...34` / `...84` instead of `...33` / `...83`, matching native Alight Motion XMLs (`t % 50 in {0, 17, 34}`) so `floor(t_ms * 60 / 1000)` never lands 1ms early on the previous frame.
+  - Regenerated `C:\Users\jeduc\Downloads\Test Training\Clipcut test 3.xml` and `c:\Users\jeduc\Downloads\Clipcut 2 test.xml` (`6084`, `7634`, `9184`, `10734`, `12284`, `14884`, `15384`, `19534`, `20584`).
+- **Invariants / Rules to Uphold**:
+  - Always use `math.ceil((frame_idx * 1000.0) / fps - 1e-9)` (`Math.ceil((frameIdx * 1000) / fps - 1e-9)`) when converting 60fps frame indices to Alight Motion XML milliseconds so `frame % 3 == 2` timestamps end in `34`/`84` rather than `33`/`83`.
+
+
+### 2026-11-15 — Mobile PWA Home-Screen Support & iOS/Android ClipCutNet Hardening
+- **Operator Request**: Make the in-browser ClipCutNet v2 model work on mobile when the website is added to the home screen.
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\manifest.webmanifest` (added)
+  - `C:\Users\jeduc\Downloads\Flippy v5\sw.js` (added)
+  - `C:\Users\jeduc\Downloads\Flippy v5\index.html`
+  - `C:\Users\jeduc\Downloads\Flippy v5\clipcut_browser.js`
+  - `C:\Users\jeduc\Downloads\Flippy v5\server.js`
+- **Specific Adjustments Made**:
+  - Added `manifest.webmanifest` (`display: "standalone"`, `start_url: "./"`, `apple-touch-icon.png` + `favicon.png`) and `sw.js` (network-first with offline cache fallback for core app shell and `clipcut_browser.js?v=2.3`) so the app and in-browser model work when launched from iOS/Android Home Screen.
+  - Linked `manifest.webmanifest`, added `<meta name="mobile-web-app-capable" content="yes">`, bumped `clipcut_browser.js?v=2.3`, and registered `./sw.js` on HTTP/HTTPS in `index.html`.
+  - Hardened `clipcut_browser.js` for mobile WebKit/Chromium standalone mode: immediate resolve when `seekVideo` targets current `readyState >= 2` frame, `1500ms` seek safety timeout, `playsinline` / `webkit-playsinline` / `muted` + `video.load()` + `canplay` fallback, periodic main-thread yields every 12 frames for smooth mobile progress updates, and decoder cleanup in `finally`.
+  - Added `.webmanifest` MIME type (`application/manifest+json`) in `server.js`.
+- **Invariants / Rules to Uphold**:
+  - Whenever updating `clipcut_browser.js`, `fx.js`, or `styles.css` cache-buster query strings in `index.html`, update `CORE_ASSETS` in `sw.js` to match.

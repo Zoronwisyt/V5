@@ -1723,13 +1723,13 @@
         const stem = file.name.replace(/\.[^.]+$/, '') || 'Flippy_Beats';
 
         const bookmarksXml = (data.cuts || [])
-          .map((c, idx) => `  <bookmark t="${c.time_ms}" label="Beat ${idx + 1}" />`)
+          .map((c, idx) => `  <bookmark t="${c.time_ms}" label="${escXmlAttr(c.label || `Beat ${idx + 1}`)}" />`)
           .join('\n');
         const xmlStr = `<?xml version="1.0" encoding="utf-8"?>\n<scene title="${escXmlAttr(stem)}" width="${w}" height="${h}" exportWidth="${w}" exportHeight="${h}" fps="${fps}" totalTime="${totalMs}" bgcolor="#ff000000">\n${bookmarksXml}\n</scene>`;
         loadAlightXmlString(xmlStr, `${stem}_beats.xml`);
         if (xbProjectInfo) {
-          const modeTag = data.engine === 'browser-clipcutnet' ? 'In-Browser ClipCutNet' : 'ClipCutNet';
-          xbProjectInfo.textContent = `${stem} · ${w}×${h} · ${fps}fps · ${data.cut_count} beat bookmarks (${modeTag})`;
+          const modeTag = data.engine === 'browser-clipcutnet-v2' ? 'In-Browser ClipCutNet v2' : 'ClipCutNet v2';
+          xbProjectInfo.textContent = `${stem} · ${w}×${h} · ${fps}fps · ${data.cut_count} Category/Winner cuts (${modeTag})`;
         }
       } catch (err) {
         if (xbProjectInfo) xbProjectInfo.textContent = `Beat detection failed: ${err.message}`;

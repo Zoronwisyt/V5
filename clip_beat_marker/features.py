@@ -2,73 +2,116 @@ import cv2
 import numpy as np
 
 
-def _region_diff(prev_bgr: np.ndarray, curr_bgr: np.ndarray) -> tuple[float, float]:
-    prev_hsv = cv2.cvtColor(prev_bgr, cv2.COLOR_BGR2HSV)
-    curr_hsv = cv2.cvtColor(curr_bgr, cv2.COLOR_BGR2HSV)
-
-    hist_prev = cv2.calcHist([prev_hsv], [0, 1], None, [16, 16], [0, 180, 0, 256])
-    hist_curr = cv2.calcHist([curr_hsv], [0, 1], None, [16, 16], [0, 180, 0, 256])
-    cv2.normalize(hist_prev, hist_prev)
-    cv2.normalize(hist_curr, hist_curr)
-
-    hist_diff = float(cv2.compareHist(hist_prev, hist_curr, cv2.HISTCMP_BHATTACHARYYA))
-
-    prev_gray = cv2.cvtColor(prev_bgr, cv2.COLOR_BGR2GRAY).astype(np.float32)
-    curr_gray = cv2.cvtColor(curr_bgr, cv2.COLOR_BGR2GRAY).astype(np.float32)
-    luma_mae = float(np.mean(np.abs(curr_gray - prev_gray)) / 255.0)
-    return hist_diff, luma_mae
+def _frame_hist_hs(bgr_small: np.ndarray) -> np.ndarray:
+    hsv = cv2.cvtColor(bgr_small, cv2.COLOR_BGR2HSV)
+    hist = cv2.calcHist([hsv], [0, 1], None, [16, 16], [0, 180, 0, 256])
+    cv2.normalize(hist, hist, norm_type=cv2.NORM_L1)
+    return hist.flatten()
 
 
-def _seam_energy(bgr: np.ndarray) -> float:
-    """Measure horizontal edge energy at the vertical midpoint (split-screen seam)."""
-    gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY).astype(np.float32) / 255.0
-    mid = gray.shape[0] // 2
-    band = gray[max(0, mid - 2) : min(gray.shape[0], mid + 2), :]
-    if band.shape[0] < 2:
-        return 0.0
-    return float(np.mean(np.abs(np.diff(band, axis=0))))
+def _bhattacharyya(h1: np.ndarray, h2: np.ndarray) -> float:
+    bc = float(np.sum(np.sqrt(np.maximum(0.0, h1 * h2))))
+    return float(np.sqrt(max(0.0, 1.0 - bc)))
 
 
-def extract_video_features(video_path: str) -> tuple[np.ndarray, float, int]:
+def _seam_spike(rgb_f: np.ndarray) -> float:
     """
-    Extract per-frame transition features for all consecutive frame pairs.
-    Returns (features [N, 8], fps, total_frames).
+    Detect horizontal split-screen seam across y = H/2 (Category clip).
+    Compares max row-to-row color jump near mid (rows 42..48 of 90)
+    against surrounding texture above (36..41) and below (49..54).
+    """
+    d_band = [float(np.mean(np.abs(rgb_f[y] - rgb_f[y - 1]))) for y in range(42, 49)]
+    surr_a = float(np.mean(np.abs(rgb_f[36:41] - rgb_f[35:40])))
+    surr_b = float(np.mean(np.abs(rgb_f[50:55] - rgb_f[49:54])))
+    surr = 0.5 * (surr_a + surr_b) + 0.006
+    return max(d_band) / surr
+
+
+def extract_video_features(video_path: str) -> tuple[np.ndarray, np.ndarray, float, int]:
+    """
+    Extract 12-dim 'Who is Strongest' temporal + split-seam features for each
+    consecutive frame transition.
+    Returns (features [N-1, 12], is_split [N], fps, total_frames).
     """
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         raise RuntimeError(f"Could not open video: {video_path}")
 
-    fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+    fps = float(cap.get(cv2.CAP_PROP_FPS) or 60.0)
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
 
-    ret, prev = cap.read()
-    if not ret:
-        cap.release()
-        raise RuntimeError(f"No readable frames in {video_path}")
+    frames_f = []
+    h_full, h_top, h_bot, seams, lumas = [], [], [], [], []
 
-    prev_s = cv2.resize(prev, (160, 90))
-    prev_seam = _seam_energy(prev_s)
-    mid = prev_s.shape[0] // 2
-
-    feats = []
     while True:
-        ret, curr = cap.read()
+        ret, frame = cap.read()
         if not ret:
             break
-
-        curr_s = cv2.resize(curr, (160, 90))
-        curr_seam = _seam_energy(curr_s)
-
-        full_h, full_l = _region_diff(prev_s, curr_s)
-        top_h, top_l = _region_diff(prev_s[:mid], curr_s[:mid])
-        bot_h, bot_l = _region_diff(prev_s[mid:], curr_s[mid:])
-        seam_delta = abs(curr_seam - prev_seam)
-        split_asym = abs(top_h - bot_h)
-
-        feats.append([full_h, full_l, top_h, top_l, bot_h, bot_l, seam_delta, split_asym])
-
-        prev_s = curr_s
-        prev_seam = curr_seam
+        s = cv2.resize(frame, (160, 90))
+        sf = s.astype(np.float32) / 255.0
+        frames_f.append(sf)
+        h_full.append(_frame_hist_hs(s))
+        h_top.append(_frame_hist_hs(s[:45]))
+        h_bot.append(_frame_hist_hs(s[45:]))
+        seams.append(_seam_spike(sf))
+        lumas.append(float(np.mean(sf)))
 
     cap.release()
-    return np.array(feats, dtype=np.float32), float(fps), total_frames
+    n = len(frames_f)
+    if n < 2:
+        raise RuntimeError(f"Video has fewer than 2 readable frames: {video_path}")
+
+    seams_np = np.array(seams, dtype=np.float32)
+    lumas_np = np.array(lumas, dtype=np.float32)
+    k = max(3, int(round(0.10 * fps)))  # ~6 frames at 60fps
+
+    is_split = np.zeros(n, dtype=bool)
+    for i in range(n):
+        lo = max(0, i - 2)
+        hi = min(n, i + 3)
+        is_split[i] = float(np.median(seams_np[lo:hi])) > 2.1
+
+    feats = np.zeros((n - 1, 12), dtype=np.float32)
+
+    for i in range(1, n):
+        inst_full_h = _bhattacharyya(h_full[i - 1], h_full[i])
+        inst_full_l = float(np.mean(np.abs(frames_f[i] - frames_f[i - 1])))
+        inst_top_h = _bhattacharyya(h_top[i - 1], h_top[i])
+        inst_bot_h = _bhattacharyya(h_bot[i - 1], h_bot[i])
+
+        # Representative non-flash frames before and after i
+        a0, a1 = max(0, i - k), i
+        b0, b1 = i, min(n, i + k)
+        a_lumas = lumas_np[a0:a1]
+        b_lumas = lumas_np[b0:b1]
+        a_idx = a0 + int(np.argsort(a_lumas)[len(a_lumas) // 2])
+        b_idx = b0 + int(np.argsort(b_lumas)[len(b_lumas) // 2])
+
+        pers_full_h = _bhattacharyya(h_full[a_idx], h_full[b_idx])
+        pers_full_l = float(np.mean(np.abs(frames_f[b_idx] - frames_f[a_idx])))
+        pers_top_h = _bhattacharyya(h_top[a_idx], h_top[b_idx])
+        pers_bot_h = _bhattacharyya(h_bot[a_idx], h_bot[b_idx])
+        pers_asym = abs(pers_top_h - pers_bot_h)
+
+        sb = float(np.median(seams_np[max(0, i - k) : i]))
+        sa = float(np.median(seams_np[i : min(n, i + k)]))
+        seam_flip = 1.0 if ((sb > 2.1) != (sa > 2.1) and abs(sa - sb) >= 0.7) else 0.0
+        seam_delta = min(1.0, abs(sa - sb) / 4.0)
+        seam_inst = min(1.0, abs(float(seams_np[i]) - float(seams_np[i - 1])) / 3.0)
+
+        feats[i - 1] = [
+            inst_full_h,
+            inst_full_l,
+            inst_top_h,
+            inst_bot_h,
+            pers_full_h,
+            pers_full_l,
+            pers_top_h,
+            pers_bot_h,
+            pers_asym,
+            seam_flip,
+            seam_delta,
+            seam_inst,
+        ]
+
+    return feats, is_split, fps, n
