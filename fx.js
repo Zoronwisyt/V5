@@ -921,7 +921,7 @@
 
   if (navTabAmLink && amlinkPanel) {
     navTabAmLink.addEventListener('click', () => {
-      ['controls-panel', 'preview-panel', 'data-panel', 'converter-panel', 'xmlbeat-panel', 'realpreview-panel', 'ytconverter-panel', 'hollowboxPanel', 'editing-panel'].forEach((id) => {
+      ['controls-panel', 'preview-panel', 'data-panel', 'converter-panel', 'xmlbeat-panel', 'presets-panel', 'realpreview-panel', 'ytconverter-panel', 'hollowboxPanel', 'editing-panel'].forEach((id) => {
         const el = document.getElementById(id);
         if (el) el.style.display = 'none';
       });
@@ -1189,7 +1189,7 @@
 
   if (navTabXmlBeat && xmlbeatPanel) {
     navTabXmlBeat.addEventListener('click', () => {
-      ['controls-panel', 'preview-panel', 'data-panel', 'converter-panel', 'amlink-panel', 'realpreview-panel', 'ytconverter-panel', 'hollowboxPanel', 'editing-panel'].forEach((id) => {
+      ['controls-panel', 'preview-panel', 'data-panel', 'converter-panel', 'amlink-panel', 'presets-panel', 'realpreview-panel', 'ytconverter-panel', 'hollowboxPanel', 'editing-panel'].forEach((id) => {
         const el = document.getElementById(id);
         if (el) el.style.display = 'none';
       });
@@ -1631,6 +1631,8 @@
     });
   }
 
+  window.FlippyBeatXmlLoad = loadAlightXmlString;
+
   if (xbStartSelect) {
     xbStartSelect.addEventListener('change', () => {
       const i = Number(xbStartSelect.value);
@@ -2023,6 +2025,212 @@
     });
   }
 
+  const xbUngroupModal = document.getElementById('xbUngroupModal');
+  const xbUngroupModalDesc = document.getElementById('xbUngroupModalDesc');
+  const xbUngroupYesBtn = document.getElementById('xbUngroupYesBtn');
+  const xbUngroupNoBtn = document.getElementById('xbUngroupNoBtn');
+  let pendingUngroupClones = [];
+
+  function openUngroupModal(clonedCount) {
+    if (!xbUngroupModal) return;
+    if (xbUngroupModalDesc) {
+      xbUngroupModalDesc.textContent = `Cloned ${clonedCount} alternating Category → Winner groups. Ungroup every cloned group so each inner layer sits directly between the bookmarks, with keyframes stretched from layer start to 1ms before it ends?`;
+    }
+    xbUngroupModal.style.display = 'flex';
+    const card = xbUngroupModal.querySelector('.modal-card');
+    if (card && window.gsap && !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+      window.gsap.fromTo(card, { scale: 0.9, opacity: 0, y: 12 }, { scale: 1, opacity: 1, y: 0, duration: 0.28, ease: 'back.out(1.6)' });
+    }
+  }
+
+  function closeUngroupModal() {
+    if (xbUngroupModal) xbUngroupModal.style.display = 'none';
+    pendingUngroupClones = [];
+  }
+
+  function retimeLayerKeyframesToFullSpan(layerEl, durMs) {
+    const safeDur = Math.max(2, durMs);
+    const normEnd = Math.max(0, (safeDur - 1) / safeDur);
+    const kfParents = new Set();
+    layerEl.querySelectorAll('kf').forEach((kf) => {
+      if (kf.parentElement) kfParents.add(kf.parentElement);
+    });
+    kfParents.forEach((parent) => {
+      const kfs = Array.from(parent.children).filter((c) => c.tagName.toLowerCase() === 'kf');
+      if (!kfs.length) return;
+      if (kfs.length === 1) {
+        kfs[0].setAttribute('t', '0.000000');
+        return;
+      }
+      const times = kfs.map((k) => parseFloat(k.getAttribute('t') || '0')).filter((n) => Number.isFinite(n));
+      const minT = Math.min(...times);
+      const maxT = Math.max(...times);
+      const span = maxT - minT;
+      kfs.forEach((k) => {
+        const oldT = parseFloat(k.getAttribute('t') || '0');
+        const newT = span > 1e-6 ? ((oldT - minT) / span) * normEnd : 0;
+        k.setAttribute('t', newT.toFixed(6));
+      });
+    });
+  }
+
+  function shiftVec3LocationString(valStr, dx, dy) {
+    const parts = String(valStr || '').split(',').map((s) => parseFloat(s.trim()));
+    if (parts.length < 2 || !Number.isFinite(parts[0]) || !Number.isFinite(parts[1])) return valStr;
+    const nx = (parts[0] + dx).toFixed(6);
+    const ny = (parts[1] + dy).toFixed(6);
+    return parts.length >= 3 && Number.isFinite(parts[2]) ? `${nx},${ny},${parts[2].toFixed(6)}` : `${nx},${ny}`;
+  }
+
+  function recenterLayerToProject(layerEl, dx, dy) {
+    if (Math.abs(dx) < 0.001 && Math.abs(dy) < 0.001) return;
+    const transformEl = layerEl.querySelector(':scope > transform');
+    if (!transformEl) return;
+    const locEl = transformEl.querySelector(':scope > location');
+    if (!locEl) return;
+    if (locEl.hasAttribute('value')) {
+      locEl.setAttribute('value', shiftVec3LocationString(locEl.getAttribute('value'), dx, dy));
+    }
+    locEl.querySelectorAll(':scope > kf').forEach((kf) => {
+      if (kf.hasAttribute('v')) {
+        kf.setAttribute('v', shiftVec3LocationString(kf.getAttribute('v'), dx, dy));
+      }
+    });
+  }
+
+  function ensureGroupProjectMask(grp, projW, projH, usedIds) {
+    if (!xbDoc || !grp) return;
+    const cx = (projW / 2).toFixed(6);
+    const cy = (projH / 2).toFixed(6);
+    let transformEl = grp.querySelector(':scope > transform');
+    if (!transformEl) {
+      transformEl = xbDoc.createElement('transform');
+      grp.insertBefore(transformEl, grp.firstChild);
+    }
+    let locEl = transformEl.querySelector(':scope > location');
+    if (!locEl) {
+      locEl = xbDoc.createElement('location');
+      transformEl.appendChild(locEl);
+    }
+    if (!locEl.querySelector(':scope > kf')) {
+      locEl.setAttribute('value', `${cx},${cy},0.000000`);
+    }
+
+    const isEmbed = grp.tagName.toLowerCase() === 'embedscene';
+    const container = isEmbed ? (grp.querySelector(':scope > scene') || grp) : grp;
+    if (container.querySelector('[data-xb-temp-mask="1"]')) return;
+
+    const cW = Number(container.getAttribute('width') || projW);
+    const cH = Number(container.getAttribute('height') || projH);
+    const cDur = container.getAttribute('totalTime') || grp.getAttribute('outTime') || '1000';
+
+    const maskShape = xbDoc.createElement('shape');
+    maskShape.setAttribute('id', nextUniqueId(usedIds));
+    maskShape.setAttribute('label', '__xb_project_mask');
+    maskShape.setAttribute('data-xb-temp-mask', '1');
+    maskShape.setAttribute('startTime', '0');
+    maskShape.setAttribute('endTime', String(cDur));
+    maskShape.setAttribute('fillType', 'color');
+    maskShape.setAttribute('blending', 'mask');
+    maskShape.setAttribute('s', '.rect');
+
+    const mTransform = xbDoc.createElement('transform');
+    const mLoc = xbDoc.createElement('location');
+    mLoc.setAttribute('value', `${(cW / 2).toFixed(6)},${(cH / 2).toFixed(6)},0.000000`);
+    mTransform.appendChild(mLoc);
+    maskShape.appendChild(mTransform);
+
+    const mSize = xbDoc.createElement('property');
+    mSize.setAttribute('name', 'size');
+    mSize.setAttribute('type', 'vec2');
+    mSize.setAttribute('value', `${(projW / 2).toFixed(6)},${(projH / 2).toFixed(6)}`);
+    maskShape.appendChild(mSize);
+
+    container.appendChild(maskShape);
+  }
+
+  function ungroupClonedBeatGroups(groupsToUngroup) {
+    if (!xbDoc || !groupsToUngroup.length) return 0;
+    const scene = xbDoc.querySelector('scene');
+    if (!scene) return 0;
+    const projW = Number(scene.getAttribute('width') || 1080);
+    const projH = Number(scene.getAttribute('height') || 1920);
+    const projCx = projW / 2;
+    const projCy = projH / 2;
+    const usedIds = collectUsedIds(scene);
+    const layerTagSet = new Set(['shape', 'text', 'media', 'image', 'video', 'nullobj', 'audio', 'group', 'embedscene']);
+    let extractedCount = 0;
+
+    groupsToUngroup.forEach((grp) => {
+      if (!grp || grp.parentNode !== scene) return;
+      const tStart = Number(grp.getAttribute('startTime') || 0);
+      const tEnd = Number(grp.getAttribute('endTime') || (tStart + 100));
+      const durMs = Math.max(2, tEnd - tStart);
+
+      const isEmbed = grp.tagName.toLowerCase() === 'embedscene';
+      const innerScene = isEmbed ? grp.querySelector(':scope > scene') : null;
+      const sourceContainer = innerScene || grp;
+      const innerW = Number((innerScene && innerScene.getAttribute('width')) || projW);
+      const innerH = Number((innerScene && innerScene.getAttribute('height')) || projH);
+      const dx = projCx - (innerW / 2);
+      const dy = projCy - (innerH / 2);
+
+      const innerLayers = Array.from(sourceContainer.children).filter((el) =>
+        layerTagSet.has(el.tagName.toLowerCase())
+      );
+
+      innerLayers.forEach((inner) => {
+        if (
+          inner.getAttribute('data-xb-temp-mask') === '1' ||
+          inner.getAttribute('label') === '__xb_project_mask'
+        ) {
+          inner.remove();
+          return;
+        }
+        const layerClone = inner.cloneNode(true);
+        if (layerClone.hasAttribute('id') && /^\d+$/.test((layerClone.getAttribute('id') || '').trim())) {
+          layerClone.setAttribute('id', nextUniqueId(usedIds));
+        }
+        layerClone.querySelectorAll('[id]').forEach((desc) => {
+          if (desc.tagName.toLowerCase() === 'effect') return;
+          const raw = (desc.getAttribute('id') || '').trim();
+          if (raw && /^\d+$/.test(raw)) desc.setAttribute('id', nextUniqueId(usedIds));
+        });
+        layerClone.setAttribute('startTime', String(tStart));
+        layerClone.setAttribute('endTime', String(tEnd));
+        recenterLayerToProject(layerClone, dx, dy);
+        retimeLayerKeyframesToFullSpan(layerClone, durMs);
+        scene.insertBefore(layerClone, grp);
+        extractedCount += 1;
+      });
+
+      grp.remove();
+    });
+
+    scene.querySelectorAll('[data-xb-temp-mask="1"], [label="__xb_project_mask"]').forEach((m) => m.remove());
+    return extractedCount;
+  }
+
+  if (xbUngroupNoBtn) {
+    xbUngroupNoBtn.addEventListener('click', () => {
+      closeUngroupModal();
+      if (xbActionStatus) xbActionStatus.textContent = 'Kept cloned Category → Winner groups intact.';
+      StudioAudio.playClick();
+    });
+  }
+
+  if (xbUngroupYesBtn) {
+    xbUngroupYesBtn.addEventListener('click', () => {
+      const count = ungroupClonedBeatGroups(pendingUngroupClones);
+      closeUngroupModal();
+      renderXmlBeatUI();
+      if (xbActionStatus) {
+        xbActionStatus.textContent = `Ungrouped into ${count} individual layers with keyframes retimed from start to 1ms before end.`;
+      }
+      StudioAudio.playSuccess();
+    });
+  }
+
   if (vsCloneAllBtn) {
     vsCloneAllBtn.addEventListener('click', () => {
       if (!xbDoc || !xbGroups.length || xbBookmarks.length < 2) return;
@@ -2039,6 +2247,9 @@
         : (xbBookmarks.length - 1);
 
       const usedIds = collectUsedIds(scene);
+      const projW = Number(scene.getAttribute('width') || 1080);
+      const projH = Number(scene.getAttribute('height') || 1920);
+      const createdClones = [];
       let placed = 0;
       let step = 0;
       for (let i = startIdx; i < endIdx; i += 1) {
@@ -2051,7 +2262,9 @@
         const fallbackName = isCategory ? 'Category' : 'Winner';
         const clone = cloneGroupForRange(src, t1, cutEnd, usedIds);
         clone.setAttribute('label', `${src.getAttribute('label') || fallbackName} #${step + 1}`);
+        ensureGroupProjectMask(clone, projW, projH, usedIds);
         scene.appendChild(clone);
+        createdClones.push(clone);
         placed += 1;
         step += 1;
       }
@@ -2060,6 +2273,511 @@
         xbActionStatus.textContent = `Cloned ${placed} alternating Category → Winner cuts between Beat #${startIdx + 1} and Beat #${endIdx + 1}.`;
       }
       StudioAudio.playSuccess();
+      if (createdClones.length) {
+        pendingUngroupClones = createdClones;
+        openUngroupModal(createdClones.length);
+      }
     });
   }
+})();
+
+// Mobile Left-Side Vertical Icon Tab Dock Minimize / Restore + GSAP Motion
+(function initMobileTabDockToggle() {
+  const tabBar = document.getElementById('mobileTabBar');
+  const minBtn = document.getElementById('mobileTabDockMinimizeBtn');
+  const restoreBtn = document.getElementById('mobileTabDockRestoreBtn');
+  if (!tabBar || !minBtn || !restoreBtn) return;
+
+  const prefersReducedMotion = () =>
+    window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function setDockMinimized(minimized) {
+    tabBar.classList.toggle('dock-minimized', minimized);
+    restoreBtn.classList.toggle('visible', minimized);
+    restoreBtn.setAttribute('aria-hidden', String(!minimized));
+    minBtn.setAttribute('aria-expanded', String(!minimized));
+
+    if (!window.gsap || prefersReducedMotion()) return;
+    const dockItems = tabBar.querySelectorAll('.mobile-tab, .mobile-inspector-pill, .mobile-tab-dock-min');
+    window.gsap.killTweensOf([tabBar, restoreBtn, dockItems]);
+
+    if (minimized) {
+      window.gsap.to(dockItems, {
+        scale: 0.72,
+        opacity: 0.25,
+        duration: 0.18,
+        stagger: 0.018,
+        ease: 'power2.in',
+        overwrite: 'auto'
+      });
+      window.gsap.to(tabBar, {
+        xPercent: -140,
+        opacity: 0,
+        duration: 0.3,
+        ease: 'power3.inOut',
+        overwrite: 'auto'
+      });
+      window.gsap.fromTo(
+        restoreBtn,
+        { xPercent: -140, scale: 0.75, opacity: 0 },
+        { xPercent: 0, scale: 1, opacity: 1, duration: 0.38, delay: 0.12, ease: 'back.out(1.7)', overwrite: 'auto' }
+      );
+    } else {
+      window.gsap.to(restoreBtn, {
+        xPercent: -140,
+        scale: 0.78,
+        opacity: 0,
+        duration: 0.22,
+        ease: 'power2.in',
+        overwrite: 'auto'
+      });
+      window.gsap.fromTo(
+        tabBar,
+        { xPercent: -140, opacity: 0 },
+        { xPercent: 0, opacity: 1, duration: 0.36, ease: 'back.out(1.25)', overwrite: 'auto' }
+      );
+      window.gsap.fromTo(
+        dockItems,
+        { scale: 0.68, opacity: 0 },
+        { scale: 1, opacity: 1, duration: 0.32, delay: 0.06, stagger: 0.024, ease: 'back.out(1.65)', overwrite: 'auto' }
+      );
+    }
+  }
+
+  minBtn.addEventListener('click', () => {
+    setDockMinimized(true);
+    if (window.StudioAudio && typeof window.StudioAudio.playClick === 'function') window.StudioAudio.playClick();
+  });
+
+  restoreBtn.addEventListener('click', () => {
+    setDockMinimized(false);
+    if (window.StudioAudio && typeof window.StudioAudio.playClick === 'function') window.StudioAudio.playClick();
+  });
+})();
+
+// Smooth GSAP Header Button Choreography When Switching Tabs
+(function initHeaderTabMotion() {
+  const prefersReducedMotion = () =>
+    window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function animateHeaderButtons(activeTabEl) {
+    if (!window.gsap || prefersReducedMotion()) return;
+
+    if (activeTabEl) {
+      window.gsap.fromTo(
+        activeTabEl,
+        { scale: 0.88 },
+        { scale: 1, duration: 0.34, ease: 'back.out(1.9)', overwrite: 'auto' }
+      );
+    }
+
+    const desktopHeaderBtns = document.querySelectorAll('#app-header .header-actions > *');
+    if (desktopHeaderBtns.length) {
+      window.gsap.fromTo(
+        desktopHeaderBtns,
+        { y: -3, scale: 0.94, opacity: 0.82 },
+        { y: 0, scale: 1, opacity: 1, duration: 0.28, stagger: 0.03, ease: 'back.out(1.7)', overwrite: 'auto' }
+      );
+    }
+
+    const mobileHeaderBtns = document.querySelectorAll('.mobile-header-right > *');
+    if (mobileHeaderBtns.length) {
+      window.gsap.fromTo(
+        mobileHeaderBtns,
+        { y: 3, scale: 0.9, opacity: 0.8 },
+        { y: 0, scale: 1, opacity: 1, duration: 0.3, stagger: 0.03, ease: 'back.out(1.8)', overwrite: 'auto' }
+      );
+    }
+  }
+
+  document.querySelectorAll('.nav-tab, .mobile-tab, .mobile-inspector-pill').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (btn.disabled || btn.getAttribute('aria-disabled') === 'true') return;
+      animateHeaderButtons(btn);
+    });
+  });
+
+  window.addEventListener('flippy:tabswitched', () => {
+    const activeDesktop = document.querySelector('.nav-tab.active');
+    const activeMobile = document.querySelector('.mobile-tab.active, .mobile-inspector-pill.active');
+    animateHeaderButtons(window.innerWidth <= 860 ? activeMobile : activeDesktop);
+  });
+})();
+
+// ==========================================================================
+// Local Preset Vault (Links & XML Files) + Tab Switching
+// ==========================================================================
+(function initLocalPresetVault() {
+  const STORAGE_KEY = 'flippy_v5_saved_presets';
+  const navTabPresets = document.getElementById('navTabPresets');
+  const presetsPanel = document.getElementById('presets-panel');
+  const mobileNavPresets = document.getElementById('mobileNavPresets');
+  const mobileTabPresets = document.getElementById('mobileTabPresets');
+  const mobilePresetsSlot = document.getElementById('mobilePresetsSlot');
+  const appMainEl = document.getElementById('app-main');
+
+  function syncPresetsPlacement() {
+    if (!presetsPanel) return;
+    if (window.innerWidth <= 860) {
+      if (mobilePresetsSlot && presetsPanel.parentElement !== mobilePresetsSlot) {
+        mobilePresetsSlot.appendChild(presetsPanel);
+      }
+      presetsPanel.style.display = 'block';
+    } else if (appMainEl && presetsPanel.parentElement !== appMainEl) {
+      appMainEl.appendChild(presetsPanel);
+      presetsPanel.style.display = (navTabPresets && navTabPresets.classList.contains('active')) ? 'flex' : 'none';
+    }
+  }
+
+  if (navTabPresets && presetsPanel) {
+    navTabPresets.addEventListener('click', () => {
+      ['controls-panel', 'preview-panel', 'data-panel', 'converter-panel', 'amlink-panel', 'xmlbeat-panel', 'realpreview-panel', 'ytconverter-panel', 'hollowboxPanel', 'editing-panel'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+      });
+      document.querySelectorAll('.nav-tab').forEach((t) => t.classList.remove('active'));
+      navTabPresets.classList.add('active');
+      syncPresetsPlacement();
+      presetsPanel.style.display = 'flex';
+      window.dispatchEvent(new CustomEvent('flippy:tabswitched', { detail: { tab: 'presets' } }));
+    });
+  }
+
+  document.querySelectorAll('.nav-tab').forEach((tab) => {
+    if (tab === navTabPresets) return;
+    tab.addEventListener('click', () => {
+      if (navTabPresets) navTabPresets.classList.remove('active');
+      if (presetsPanel && window.innerWidth > 860) presetsPanel.style.display = 'none';
+    });
+  });
+
+  if (mobileNavPresets && mobileTabPresets) {
+    mobileNavPresets.addEventListener('click', () => {
+      syncPresetsPlacement();
+      document.querySelectorAll('.mobile-tab-content.active').forEach((c) => c.classList.remove('active'));
+      document.querySelectorAll('.mobile-tab.active, .mobile-inspector-pill.active').forEach((t) => t.classList.remove('active'));
+      document.documentElement.classList.remove('inspector-tab-open');
+      mobileTabPresets.classList.add('active');
+      mobileNavPresets.classList.add('active');
+    });
+  }
+
+  document.querySelectorAll('.mobile-tab, #mobileInspectorToggleBtn').forEach((btn) => {
+    if (btn === mobileNavPresets) return;
+    btn.addEventListener('click', () => {
+      if (mobileNavPresets) mobileNavPresets.classList.remove('active');
+      if (mobileTabPresets) mobileTabPresets.classList.remove('active');
+    });
+  });
+
+  window.addEventListener('resize', () => setTimeout(syncPresetsPlacement, 60));
+  window.addEventListener('flippy:unlocked', () => setTimeout(syncPresetsPlacement, 80));
+  setTimeout(syncPresetsPlacement, 160);
+
+  const psNameInput = document.getElementById('psNameInput');
+  const psTypeSelect = document.getElementById('psTypeSelect');
+  const psPayloadInput = document.getElementById('psPayloadInput');
+  const psFileBtn = document.getElementById('psFileBtn');
+  const psFileInput = document.getElementById('psFileInput');
+  const psSaveBtn = document.getElementById('psSaveBtn');
+  const psStatus = document.getElementById('psStatus');
+  const psSearchInput = document.getElementById('psSearchInput');
+  const psList = document.getElementById('psList');
+  const psCountBadge = document.getElementById('psCountBadge');
+  const psExportBackupBtn = document.getElementById('psExportBackupBtn');
+  const psImportBackupBtn = document.getElementById('psImportBackupBtn');
+  const psImportBackupInput = document.getElementById('psImportBackupInput');
+
+  const UNIVERSAL_KEY = 'flippy_saved_presets_universal';
+  const IDB_NAME = 'FlippyPresetVaultDB';
+  const IDB_STORE = 'presets_store';
+  const IDB_RECORD_KEY = 'all_presets';
+  let presetCache = null;
+
+  function mergePresetLists(a, b) {
+    const map = new Map();
+    [...(Array.isArray(a) ? a : []), ...(Array.isArray(b) ? b : [])].forEach((p) => {
+      if (p && p.id && !map.has(p.id)) map.set(p.id, p);
+    });
+    return Array.from(map.values()).sort((x, y) => (y.savedAt || 0) - (x.savedAt || 0));
+  }
+
+  function readLocalStoragePresets() {
+    let primary = [];
+    let universal = [];
+    try {
+      const r1 = localStorage.getItem(STORAGE_KEY);
+      if (r1) primary = JSON.parse(r1);
+    } catch (e) {}
+    try {
+      const r2 = localStorage.getItem(UNIVERSAL_KEY);
+      if (r2) universal = JSON.parse(r2);
+    } catch (e) {}
+    return mergePresetLists(primary, universal);
+  }
+
+  function openPresetsIDB() {
+    return new Promise((resolve, reject) => {
+      if (!window.indexedDB) return reject(new Error('No IndexedDB'));
+      const req = window.indexedDB.open(IDB_NAME, 1);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains(IDB_STORE)) {
+          db.createObjectStore(IDB_STORE);
+        }
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async function savePresetsToIDB(items) {
+    try {
+      const db = await openPresetsIDB();
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE, 'readwrite');
+        tx.objectStore(IDB_STORE).put(items, IDB_RECORD_KEY);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+      db.close();
+    } catch (e) {}
+  }
+
+  async function hydratePresetsFromIDB() {
+    try {
+      if (navigator.storage && typeof navigator.storage.persist === 'function') {
+        navigator.storage.persist().catch(() => {});
+      }
+      const db = await openPresetsIDB();
+      const idbItems = await new Promise((resolve) => {
+        const tx = db.transaction(IDB_STORE, 'readonly');
+        const req = tx.objectStore(IDB_STORE).get(IDB_RECORD_KEY);
+        req.onsuccess = () => resolve(Array.isArray(req.result) ? req.result : []);
+        req.onerror = () => resolve([]);
+      });
+      db.close();
+      const localItems = readLocalStoragePresets();
+      const merged = mergePresetLists(idbItems, localItems);
+      presetCache = merged;
+      if (merged.length !== idbItems.length) {
+        savePresetsToIDB(merged);
+      }
+      if (merged.length !== localItems.length) {
+        try {
+          const json = JSON.stringify(merged);
+          localStorage.setItem(STORAGE_KEY, json);
+          localStorage.setItem(UNIVERSAL_KEY, json);
+        } catch (e) {}
+      }
+      renderPresets();
+    } catch (e) {}
+  }
+
+  function readPresets() {
+    if (Array.isArray(presetCache)) return presetCache;
+    presetCache = readLocalStoragePresets();
+    return presetCache;
+  }
+
+  function writePresets(items) {
+    presetCache = Array.isArray(items) ? items : [];
+    const json = JSON.stringify(presetCache);
+    try { localStorage.setItem(STORAGE_KEY, json); } catch (e) {}
+    try { localStorage.setItem(UNIVERSAL_KEY, json); } catch (e) {}
+    savePresetsToIDB(presetCache);
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function renderPresets() {
+    if (!psList) return;
+    const all = readPresets();
+    if (psCountBadge) psCountBadge.textContent = String(all.length);
+    const q = (psSearchInput && psSearchInput.value || '').trim().toLowerCase();
+    const filtered = q ? all.filter((p) => (p.name || '').toLowerCase().includes(q) || (p.type || '').toLowerCase().includes(q)) : all;
+
+    if (!filtered.length) {
+      psList.innerHTML = `<div class="xmlbeat-empty">${all.length ? 'No matching presets.' : 'No presets saved yet.'}</div>`;
+      return;
+    }
+
+    psList.innerHTML = filtered.map((p) => {
+      const isXml = p.type === 'xml';
+      const preview = isXml ? `${(p.payload.length / 1024).toFixed(1)} KB XML` : p.payload;
+      return `
+        <div class="ps-item" data-id="${escapeHtml(p.id)}">
+          <div class="ps-item-head">
+            <span class="ps-item-title">${escapeHtml(p.name)}</span>
+            <span class="ps-badge ${isXml ? 'xml' : ''}">${isXml ? 'XML' : 'LINK'}</span>
+          </div>
+          <div class="ps-item-preview">${escapeHtml(preview)}</div>
+          <div class="ps-item-actions">
+            <button class="ph-btn ps-act-copy" type="button">Copy</button>
+            ${isXml
+              ? '<button class="ph-btn ps-act-dl" type="button">Download .xml</button><button class="ph-btn primary ps-act-beat" type="button">Load in Beat XML</button>'
+              : '<button class="ph-btn primary ps-act-open" type="button">Open Link</button>'
+            }
+            <button class="ph-btn ps-act-del" type="button">Delete</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    psList.querySelectorAll('.ps-item').forEach((row) => {
+      const id = row.getAttribute('data-id');
+      const item = readPresets().find((p) => p.id === id);
+      if (!item) return;
+
+      const copyBtn = row.querySelector('.ps-act-copy');
+      if (copyBtn) {
+        copyBtn.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(item.payload);
+            if (psStatus) psStatus.textContent = `Copied "${item.name}".`;
+            if (window.StudioAudio) window.StudioAudio.playClick();
+          } catch (e) {}
+        });
+      }
+
+      const openBtn = row.querySelector('.ps-act-open');
+      if (openBtn) {
+        openBtn.addEventListener('click', () => {
+          if (/^https?:\/\//i.test(item.payload)) {
+            window.open(item.payload, '_blank', 'noopener');
+          }
+          if (window.StudioAudio) window.StudioAudio.playClick();
+        });
+      }
+
+      const dlBtn = row.querySelector('.ps-act-dl');
+      if (dlBtn) {
+        dlBtn.addEventListener('click', () => {
+          const blob = new Blob([item.payload], { type: 'application/xml;charset=utf-8' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = (item.name || 'preset').replace(/[^a-z0-9_-]+/gi, '_') + '.xml';
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 250);
+          if (window.StudioAudio) window.StudioAudio.playClick();
+        });
+      }
+
+      const beatBtn = row.querySelector('.ps-act-beat');
+      if (beatBtn) {
+        beatBtn.addEventListener('click', () => {
+          if (typeof window.FlippyBeatXmlLoad === 'function') {
+            window.FlippyBeatXmlLoad(item.payload, `${item.name || 'preset'}.xml`);
+          }
+          const beatTab = window.innerWidth <= 860
+            ? document.getElementById('mobileNavXmlBeatTool')
+            : document.getElementById('navTabXmlBeatTool');
+          if (beatTab) beatTab.click();
+          if (window.StudioAudio) window.StudioAudio.playSuccess();
+        });
+      }
+
+      const delBtn = row.querySelector('.ps-act-del');
+      if (delBtn) {
+        delBtn.addEventListener('click', () => {
+          const next = readPresets().filter((p) => p.id !== id);
+          writePresets(next);
+          renderPresets();
+          if (psStatus) psStatus.textContent = `Deleted "${item.name}".`;
+          if (window.StudioAudio) window.StudioAudio.playClick();
+        });
+      }
+    });
+  }
+
+  if (psFileBtn && psFileInput) {
+    psFileBtn.addEventListener('click', () => psFileInput.click());
+    psFileInput.addEventListener('change', () => {
+      const f = psFileInput.files && psFileInput.files[0];
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (psPayloadInput) psPayloadInput.value = String(reader.result || '');
+        if (psTypeSelect) psTypeSelect.value = 'xml';
+        if (psNameInput && !psNameInput.value.trim()) {
+          psNameInput.value = f.name.replace(/\.xml$/i, '');
+        }
+        if (psStatus) psStatus.textContent = `Loaded ${f.name} — click Save Preset.`;
+      };
+      reader.readAsText(f);
+    });
+  }
+
+  if (psSaveBtn) {
+    psSaveBtn.addEventListener('click', () => {
+      const name = (psNameInput && psNameInput.value || '').trim();
+      const payload = (psPayloadInput && psPayloadInput.value || '').trim();
+      if (!payload) {
+        if (psStatus) psStatus.textContent = 'Paste a link or XML first.';
+        return;
+      }
+      const detectedType = payload.startsWith('<') ? 'xml' : (psTypeSelect ? psTypeSelect.value : 'link');
+      const items = readPresets();
+      items.unshift({
+        id: 'ps_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        name: name || (detectedType === 'xml' ? 'XML Preset' : 'Alight Link'),
+        type: detectedType,
+        payload,
+        savedAt: Date.now()
+      });
+      writePresets(items);
+      if (psNameInput) psNameInput.value = '';
+      if (psPayloadInput) psPayloadInput.value = '';
+      renderPresets();
+      if (psStatus) psStatus.textContent = 'Preset saved locally.';
+      if (window.StudioAudio) window.StudioAudio.playSuccess();
+    });
+  }
+
+  if (psSearchInput) psSearchInput.addEventListener('input', renderPresets);
+
+  if (psExportBackupBtn) {
+    psExportBackupBtn.addEventListener('click', () => {
+      const data = JSON.stringify(readPresets(), null, 2);
+      const blob = new Blob([data], { type: 'application/json;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'flippy_v5_presets.json';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 250);
+    });
+  }
+
+  if (psImportBackupBtn && psImportBackupInput) {
+    psImportBackupBtn.addEventListener('click', () => psImportBackupInput.click());
+    psImportBackupInput.addEventListener('change', () => {
+      const f = psImportBackupInput.files && psImportBackupInput.files[0];
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const imported = JSON.parse(String(reader.result || '[]'));
+          if (!Array.isArray(imported)) throw new Error('Invalid');
+          const merged = [...imported, ...readPresets()];
+          writePresets(merged);
+          renderPresets();
+          if (psStatus) psStatus.textContent = `Imported ${imported.length} presets.`;
+        } catch (e) {
+          if (psStatus) psStatus.textContent = 'Invalid JSON backup file.';
+        }
+      };
+      reader.readAsText(f);
+    });
+  }
+
+  renderPresets();
+  hydratePresetsFromIDB();
 })();

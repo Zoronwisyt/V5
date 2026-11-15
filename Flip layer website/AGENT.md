@@ -1391,3 +1391,128 @@ At the end of every prompt where changes are made:
   - Verified `fx.js` syntax with `node --check` (exit code 0).
 - **Invariants / Rules to Uphold**:
   - Keep `#navTabAmLink` and `#mobileNavAmLink` non-interactive until re-enabled by the user.
+
+### 2026-11-14 — Mobile Left-Side Vertical Icon Tab Dock + Minimize Pill
+- **Operator Request**: Move mobile tab selection to an icon-only vertical bar on the left side of the screen for fuller tab visibility, with an option to minimize it into a small vertical rounded pill on the left edge and restore it.
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\index.html`
+  - `C:\Users\jeduc\Downloads\Flippy v5\styles.css`
+  - `C:\Users\jeduc\Downloads\Flippy v5\fx.js`
+- **Specific Adjustments Made**:
+  - Added `#mobileTabDockMinimizeBtn` inside `#mobileTabBar` and `#mobileTabDockRestoreBtn` right after `#mobileTabBar` in `index.html`.
+  - Restyled `.mobile-tab-bar` in `styles.css` as a left-side vertical icon-only floating pill (`left: 8px; top: 50%; transform: translateY(-50%); flex-direction: column; border-radius: 999px;`), hid `.mobile-tab span` labels, and styled `.mobile-tab-dock-restore` as a compact vertical rounded pill (`width: 22px; height: 54px; border-radius: 999px;`) on the left edge when minimized.
+  - Moved `.mobile-header` and `.mobile-tab-content` bottom padding down cleanly now that the tab bar no longer occupies the bottom edge.
+  - Added `initMobileTabDockToggle()` in `fx.js` to toggle `.dock-minimized` and `.visible` smoothly.
+  - Verified `fx.js` syntax with `node --check` (exit code 0).
+- **Invariants / Rules to Uphold**:
+  - Keep `#mobileTabBar` and `#mobileTabDockRestoreBtn` accessible via `aria-hidden` / `aria-expanded` state updates.
+
+### 2026-11-14 — Local Phone Simulator (`phone.html`)
+- **Operator Request**: Integrate a local phone preview HTML file so mobile UI changes can be tested locally without publishing to GitHub and checking on a physical phone every time.
+- **Files Created / Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\phone.html` (created)
+  - `C:\Users\jeduc\Downloads\Flippy v5\index.html`
+- **Specific Adjustments Made**:
+  - Created `phone.html` embedding `index.html` inside a realistic iPhone/Android viewport frame (`390×844` default, plus `430×932`, `375×667`, `360×800`), with Rotate, Reload, and Fit-to-Screen scaling controls, Dynamic Island, and Home Indicator.
+  - Added a quick Phone Preview link button in the desktop header of `index.html` opening `phone.html`.
+- **Invariants / Rules to Uphold**:
+  - Keep `phone.html` loading `index.html` directly via relative path so it works both from a local HTTP server and direct file preview.
+
+### 2026-11-14 — GSAP Minimize/Maximize & Tab-Switch Header Animations
+- **Operator Request**: Use `freshtechbro/claudedesignskills` GSAP/modern-web motion patterns and add smooth animations when minimizing/maximizing the tab dock and when header buttons update across tabs.
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\fx.js`
+- **Specific Adjustments Made**:
+  - Upgraded `initMobileTabDockToggle()` in `fx.js` with GSAP staggered icon shrink/pop, `power3.inOut` / `back.out` slide transitions between `#mobileTabBar` and `#mobileTabDockRestoreBtn`, and `prefers-reduced-motion` support.
+  - Added `initHeaderTabMotion()` in `fx.js` to animate the active tab pill and stagger-animate desktop (`#app-header .header-actions > *`) and mobile (`.mobile-header-right > *`) header buttons on tab switch (`flippy:tabswitched` and tab clicks).
+  - Verified `fx.js` syntax with `node --check` (exit code 0).
+- **Invariants / Rules to Uphold**:
+  - Respect `prefers-reduced-motion: reduce` before running GSAP transitions.
+
+### 2026-11-14 — Follow-Up Ungroup & Keyframe Retime Modal for Beat Groups
+- **Operator Request**: After cloning alternating Category → Winner groups, show a follow-up popup asking whether to ungroup every cloned group so each inner layer is placed directly between the bookmarks with keyframes starting at layer start and ending 1ms before layer end (or keep duplicated groups if No).
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\index.html`
+  - `C:\Users\jeduc\Downloads\Flippy v5\fx.js`
+- **Specific Adjustments Made**:
+  - Added `#xbUngroupModal` (`#xbUngroupYesBtn`, `#xbUngroupNoBtn`) in `index.html`.
+  - Added `openUngroupModal()`, `closeUngroupModal()`, `retimeLayerKeyframesToFullSpan()`, and `ungroupClonedBeatGroups()` in `fx.js`, triggered after `vsCloneAllBtn` finishes cloning.
+  - Selecting **Yes, Ungroup All** extracts each inner layer from the cloned `<embedScene>`/`<group>` directly into `<scene>` at `[tStart, tEnd]` with unique regenerated numeric IDs and remaps `<kf>` normalized timestamps onto `[0.000000, (durMs - 1) / durMs]` (1ms before the layer ends). Selecting **No, Keep Groups** leaves the duplicated groups unchanged.
+  - Verified `fx.js` syntax with `node --check` (exit code 0).
+- **Invariants / Rules to Uphold**:
+  - Preserve `<effect id="com.alightcreative...">` plugin IDs when regenerating numeric layer IDs during ungrouping.
+
+### 2026-11-14 — Project-Resolution Centering Mask & Cleanup on Ungroup
+- **Operator Request**: Before ungrouping cloned Beat Groups, center each group with a project-resolution mask rectangle, and when ungrouping, recenter the inner layers to the project resolution and delete the temporary mask rectangles.
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\fx.js`
+- **Specific Adjustments Made**:
+  - Added `ensureGroupProjectMask()` in `fx.js` (called for each cloned group in `vsCloneAllBtn`) to center the group's `<transform><location>` to `(projW / 2, projH / 2)` and insert a project-resolution `.rect` mask (`data-xb-temp-mask="1"`, `label="__xb_project_mask"`).
+  - Added `shiftVec3LocationString()` and `recenterLayerToProject()` inside `ungroupClonedBeatGroups()` in `fx.js` to translate extracted layer `<transform><location>` values and `<kf>` coordinates from the inner `<scene>`'s resolution to the parent project's resolution, and delete all temporary mask rectangles (`data-xb-temp-mask="1"` / `__xb_project_mask`) upon ungrouping.
+  - Verified `fx.js` syntax with `node --check` (exit code 0).
+- **Invariants / Rules to Uphold**:
+  - Always clean up temporary mask rectangles when ungrouping so no extra mask shapes remain on the main timeline.
+
+### 2026-11-14 — Comicy Vibe Overhaul (Halftone Dots, Jaggy Edges & Dual Comic Themes)
+- **Operator Request**: Give Flippy V5 a comic-book vibe with jaggy edges, halftone dots, and two switchable themes.
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\index.html`
+  - `C:\Users\jeduc\Downloads\Flippy v5\styles.css`
+- **Specific Adjustments Made**:
+  - Added `Bangers` Google Font in `index.html` for comic display lettering on titles, card headings, and panel headers.
+  - Added Ben-Day halftone dot + diagonal speed-line `.studio-backdrop` patterns and halftone `.converter-card::before` corner accents in `styles.css`.
+  - Added bold ink borders, hard offset comic drop-shadows (`5px 5px 0`), sawtooth jaggy `#app-header::after` edge, and jaggy `clip-path` polygons on `.step-index-tag`, `.header-export-btn`, `.mobile-header-dl-btn`, and `.ph-btn.primary`.
+  - Styled both switchable themes (`data-theme="dark"` Midnight Ink Comic and `data-theme="light"` Vintage Comic Paper) with tactile comic button hover/press states.
+- **Invariants / Rules to Uphold**:
+  - Keep `#themeToggleBtn` and `#mobileThemeToggleBtn` toggling between `data-theme="dark"` and `data-theme="light"`.
+
+### 2026-11-14 — Remove Header `.hud-strip` Spec Pill
+- **Operator Request**: Remove the `LAYERS / METHOD / MOTION / CANVAS / RATE` `.hud-strip` pill from the Flippy V5 header.
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\index.html`
+- **Specific Adjustments Made**:
+  - Removed `<div class="hud-strip" aria-label="Project specifications">` and its `.hud-chip` children from the header in `index.html` (fixing the overlap with `#hudTimecode` as well).
+- **Invariants / Rules to Uphold**:
+  - `app.js` already null-checks `#hudLayers`, `#hudSlice`, `#hudMode`, `#hudRes`, and `#hudFps`.
+
+### 2026-11-15 — Remove Excessive Static Descriptions for Cleaner GUI
+- **Operator Request**: Remove excessive descriptions across the website so the GUI looks clean and neat.
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\styles.css`
+- **Specific Adjustments Made**:
+  - Hid static `.control-hint:not(#aspectHint)`, `.ph-text small`, `.module-title small`, `.converter-desc:not(#xmlBeatExportMeta):not(#xbUngroupModalDesc)`, `.xml-export-sub`, and `.brand .subtitle` in `styles.css` so panels and controls stay uncluttered while dynamic status readouts remain visible.
+- **Invariants / Rules to Uphold**:
+  - Keep `#aspectHint`, `#xmlBeatExportMeta`, and `#xbUngroupModalDesc` visible since they show live dynamic state.
+
+### 2026-11-15 — Remove Real Preview Tab, Add Local Preset Vault & Extra Jagged Comic Edges
+- **Operator Request**: Remove the Real Preview tab, add a neat local Preset Saver for links and XML files, and add more jagged comic edge overlays.
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\index.html`
+  - `C:\Users\jeduc\Downloads\Flippy v5\styles.css`
+  - `C:\Users\jeduc\Downloads\Flippy v5\fx.js`
+- **Specific Adjustments Made**:
+  - Replaced `#navTabRealPreview` and the mobile Real Preview tab button with `#navTabPresets` and `#mobileNavPresets` in `index.html`, and hid `#mobileTabRealPreview` from navigation.
+  - Added `#presets-panel` (`Preset Vault`) and `#mobileTabPresets` in `index.html`, plus `initLocalPresetVault()` in `fx.js` (`flippy_v5_saved_presets` in `localStorage`) supporting Alight links, XML code/files (`.xml` upload), search filtering, Copy, Download `.xml`, Open Link, **Load in Beat XML** (`window.FlippyBeatXmlLoad`), Delete, and JSON Export/Import backup.
+  - Added extra jagged comic edge overlays in `styles.css` (`.panel-header::after` sawtooth strip, `.modal-card::before` / `#accessCard::before` gold comic sawtooth top edge, jagged `.nav-tab.active` / `.preset-pill.active` polygons, and `.ps-item` comic cards).
+  - Verified `fx.js` syntax with `node --check` (exit code 0).
+- **Invariants / Rules to Uphold**:
+  - Keep `#presets-panel` responsive between desktop `#app-main` and `#mobilePresetsSlot` via `syncPresetsPlacement()`.
+
+### 2026-11-15 — Theme `.styled-input` Inputs, Selects & Textareas with Comic Typography
+- **Operator Request**: Style preset name, link, and XML inputs to match the website's comic theme and typography instead of bland default Arial.
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\styles.css`
+- **Specific Adjustments Made**:
+  - Styled `.styled-input`, `input.styled-input`, `select.styled-input`, and `textarea.styled-input` in `styles.css` with `Space Grotesk` (and `IBM Plex Mono` + `height: auto; min-height: 112px` for `textarea.styled-input`), bold comic ink borders, hard offset drop-shadows (`3px 3px 0`), and dual-theme (`dark` / `light`) focus states.
+- **Invariants / Rules to Uphold**:
+  - Keep `textarea.styled-input` height `auto` so multiline XML/link inputs don't collapse to `36px`.
+
+### 2026-11-15 — Persistent IndexedDB + Cross-Version Preset Vault Storage
+- **Operator Request**: Ensure users who save presets do not lose them when the website updates on GitHub.
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\fx.js`
+- **Specific Adjustments Made**:
+  - Upgraded `initLocalPresetVault()` in `fx.js` to dual-persist presets across `localStorage` (`flippy_v5_saved_presets` + universal key `flippy_saved_presets_universal`) and `IndexedDB` (`FlippyPresetVaultDB`), auto-merging and hydrating on startup (`hydratePresetsFromIDB()`) and requesting `navigator.storage.persist()` so GitHub Pages updates and large XML files never erase saved presets.
+  - Verified `fx.js` syntax with `node --check` (exit code 0).
+- **Invariants / Rules to Uphold**:
+  - Never clear `flippy_v5_saved_presets`, `flippy_saved_presets_universal`, or `FlippyPresetVaultDB` on future updates.

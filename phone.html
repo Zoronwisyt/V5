@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flippy V5 — Local Phone Preview</title>
+  <style>
+    :root {
+      --bg: #080b0a;
+      --panel: rgba(16, 22, 19, 0.92);
+      --border: rgba(124, 168, 140, 0.24);
+      --accent: #7ca88c;
+      --text: #eef3ef;
+      --muted: #93a398;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 20% 15%, rgba(93, 134, 108, 0.16), transparent 45%),
+        radial-gradient(circle at 80% 85%, rgba(93, 134, 108, 0.12), transparent 50%),
+        var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+    }
+
+    .toolbar {
+      position: sticky;
+      top: 12px;
+      z-index: 50;
+      margin: 12px 16px 8px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(18px);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.5);
+    }
+
+    .brand {
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 0.03em;
+      color: var(--accent);
+      padding-right: 6px;
+      border-right: 1px solid var(--border);
+    }
+
+    .toolbar select,
+    .toolbar button,
+    .toolbar a {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .toolbar select:hover,
+    .toolbar button:hover,
+    .toolbar a:hover {
+      background: rgba(124, 168, 140, 0.16);
+      border-color: var(--accent);
+    }
+
+    .toolbar .size-readout {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11.5px;
+      color: var(--muted);
+      padding: 0 4px;
+    }
+
+    .stage {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 20px 26px;
+      width: 100%;
+    }
+
+    .phone-chassis {
+      position: relative;
+      padding: 14px;
+      border-radius: 52px;
+      background: linear-gradient(145deg, #252b28, #111513 45%, #1d2220);
+      border: 2px solid rgba(255, 255, 255, 0.14);
+      box-shadow:
+        0 30px 70px rgba(0, 0, 0, 0.78),
+        inset 0 0 0 2px rgba(0, 0, 0, 0.65);
+      transform-origin: center center;
+      transition: width 0.25s ease, height 0.25s ease, transform 0.2s ease;
+    }
+
+    .phone-screen {
+      position: relative;
+      width: 390px;
+      height: 844px;
+      border-radius: 40px;
+      overflow: hidden;
+      background: #000;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+    }
+
+    .dynamic-island {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 116px;
+      height: 30px;
+      background: #000;
+      border-radius: 999px;
+      z-index: 20;
+      pointer-events: none;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
+    }
+
+    .home-indicator {
+      position: absolute;
+      bottom: 7px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 132px;
+      height: 4.5px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.38);
+      z-index: 20;
+      pointer-events: none;
+    }
+
+    iframe#phoneFrame {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+      background: #0b0f0d;
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <span class="brand">FL-5 · Phone Simulator</span>
+    <select id="deviceSelect" aria-label="Phone device size">
+      <option value="390x844" selected>iPhone 15 / 16 (390×844)</option>
+      <option value="430x932">iPhone 16 Pro Max (430×932)</option>
+      <option value="375x667">iPhone SE (375×667)</option>
+      <option value="360x800">Android Compact (360×800)</option>
+    </select>
+    <span class="size-readout" id="sizeReadout">390 × 844</span>
+    <button id="rotateBtn" type="button">Rotate</button>
+    <button id="reloadBtn" type="button">Reload</button>
+    <button id="fitBtn" type="button">Fit to Screen: ON</button>
+    <a href="index.html" target="_blank" rel="noopener">Open Full Desktop</a>
+  </div>
+
+  <div class="stage">
+    <div class="phone-chassis" id="phoneChassis">
+      <div class="phone-screen" id="phoneScreen">
+        <div class="dynamic-island" id="dynamicIsland"></div>
+        <iframe id="phoneFrame" src="index.html" title="Flippy V5 Mobile Preview"></iframe>
+        <div class="home-indicator"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const deviceSelect = document.getElementById('deviceSelect');
+      const sizeReadout = document.getElementById('sizeReadout');
+      const rotateBtn = document.getElementById('rotateBtn');
+      const reloadBtn = document.getElementById('reloadBtn');
+      const fitBtn = document.getElementById('fitBtn');
+      const phoneChassis = document.getElementById('phoneChassis');
+      const phoneScreen = document.getElementById('phoneScreen');
+      const phoneFrame = document.getElementById('phoneFrame');
+      const dynamicIsland = document.getElementById('dynamicIsland');
+
+      let landscape = false;
+      let fitToScreen = true;
+
+      function applySize() {
+        const [rawW, rawH] = deviceSelect.value.split('x').map(Number);
+        const w = landscape ? rawH : rawW;
+        const h = landscape ? rawW : rawH;
+        phoneScreen.style.width = w + 'px';
+        phoneScreen.style.height = h + 'px';
+        dynamicIsland.style.display = landscape ? 'none' : 'block';
+        sizeReadout.textContent = `${w} × ${h}`;
+
+        if (fitToScreen) {
+          const availW = window.innerWidth - 64;
+          const availH = window.innerHeight - 110;
+          const scale = Math.min(1, availW / (w + 32), availH / (h + 32));
+          phoneChassis.style.transform = `scale(${scale.toFixed(3)})`;
+        } else {
+          phoneChassis.style.transform = 'scale(1)';
+        }
+      }
+
+      deviceSelect.addEventListener('change', applySize);
+      rotateBtn.addEventListener('click', () => {
+        landscape = !landscape;
+        applySize();
+      });
+      reloadBtn.addEventListener('click', () => {
+        phoneFrame.contentWindow.location.reload();
+      });
+      fitBtn.addEventListener('click', () => {
+        fitToScreen = !fitToScreen;
+        fitBtn.textContent = `Fit to Screen: ${fitToScreen ? 'ON' : 'OFF'}`;
+        applySize();
+      });
+
+      window.addEventListener('resize', applySize);
+      applySize();
+    })();
+  </script>
+</body>
+</html>
