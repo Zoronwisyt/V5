@@ -131,13 +131,50 @@ def apply_beat_markers_txt(video_path: str, feats: np.ndarray, labels: np.ndarra
     return labels
 
 
-def train(videos: list[str], out_model: str, epochs: int = 200) -> None:
+def apply_video_lens_cuts(video_path: str, feats: np.ndarray, labels: np.ndarray, vl_map: dict) -> np.ndarray:
+    """
+    Teacher labels from the video-lens skill (`vl.py analyze --mode content` shot boundaries,
+    frame-accurate). Isolated hard cuts (runs of 1-2 flagged frames) become exact labels;
+    runs of >=3 consecutive flagged frames are animated transitions/dissolves and are skipped.
+    """
+    vl_frames = sorted(vl_map.get(video_path, {}).get("vl", []))
+    if not vl_frames:
+        return labels
+    runs, cur = [], [vl_frames[0]]
+    for f in vl_frames[1:]:
+        if f - cur[-1] <= 1:
+            cur.append(f)
+        else:
+            runs.append(cur)
+            cur = [f]
+    runs.append(cur)
+
+    n_feats = len(feats)
+    inst_sharp = feats[:, 0] + feats[:, 1] + 0.5 * np.maximum(feats[:, 2], feats[:, 3])
+    added = 0
+    for run in runs:
+        if len(run) >= 3:
+            continue
+        idx = max((f - 1 for f in run if 0 <= f - 1 < n_feats), key=lambda k: inst_sharp[k], default=None)
+        if idx is None:
+            continue
+        for k in range(max(0, idx - 2), min(n_feats, idx + 3)):
+            labels[k] = 0.0
+        labels[idx] = 1.0
+        added += 1
+    print(f"  -> Applied video-lens teacher cuts ({added} hard cuts, {sum(len(r) >= 3 for r in runs)} transitions skipped)")
+    return labels
+
+
+def train(videos: list[str], out_model: str, epochs: int = 200, vl_cuts: str = "") -> None:
     all_x, all_y = [], []
+    vl_map = json.loads(Path(vl_cuts).read_text(encoding="utf-8")) if vl_cuts and Path(vl_cuts).exists() else {}
 
     for v in videos:
         print(f"Extracting 12D features: {v}")
         feats, _, fps, total_frames = extract_video_features(v)
         labels = pseudo_label_who_is_strongest(feats, fps)
+        labels = apply_video_lens_cuts(v, feats, labels, vl_map)
         labels = apply_beat_markers_txt(v, feats, labels, fps)
         print(f"  -> {total_frames} frames ({fps:.2f} fps), {int(labels.sum())} cuts")
         all_x.append(feats)
@@ -190,5 +227,6 @@ if __name__ == "__main__":
     parser.add_argument("videos", nargs="+", help="Training video paths")
     parser.add_argument("--out", default=str(Path(__file__).with_name("model.pt")), help="Output model.pt path")
     parser.add_argument("--epochs", type=int, default=200)
+    parser.add_argument("--vl-cuts", default="", help="JSON of video-lens shot frames per video (teacher labels)")
     args = parser.parse_args()
-    train(args.videos, args.out, args.epochs)
+    train(args.videos, args.out, args.epochs, args.vl_cuts)

@@ -1593,3 +1593,19 @@ At the end of every prompt where changes are made:
   - Added `.webmanifest` MIME type (`application/manifest+json`) in `server.js`.
 - **Invariants / Rules to Uphold**:
   - Whenever updating `clipcut_browser.js`, `fx.js`, or `styles.css` cache-buster query strings in `index.html`, update `CORE_ASSETS` in `sw.js` to match.
+
+
+### 2026-11-15 — video-lens Skill as Frame-Accurate Teacher for ClipCutNetV2
+- **Operator Request**: Use the video-lens skill to make the clip-change model more accurate.
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\clip_beat_marker\train_model.py` (`apply_video_lens_cuts()`, `--vl-cuts`)
+  - `C:\Users\jeduc\Downloads\Flippy v5\clip_beat_marker\vl_cuts.json` (added; video-lens shot frames for 7 videos)
+  - `C:\Users\jeduc\Downloads\Flippy v5\clip_beat_marker\model.pt`, `model.json` (retrained; previous saved as `model_prevl.pt` / `model_prevl.json`)
+  - `C:\Users\jeduc\Downloads\Flippy v5\clipcut_browser.js` (new weights, `v=2.4`), `index.html`, `sw.js` (`flippy-v5-pwa-v2`)
+- **Specific Adjustments Made**:
+  - Ran `video-lens` (`vl.py analyze --mode content --ocr off --asr none`) on Windows via a scratch `fcntl` shim (msvcrt) on `PYTHONPATH`; installed skill untouched.
+  - video-lens shot boundaries matched the model frame-exactly on 5/7 videos (Yor, Base, Solarmas, Asta, 0404: 166/166 cuts).
+  - Used video-lens hard cuts (runs of 1-2 frames) as teacher labels; runs >= 3 frames (animated wipes/dissolves, e.g. Denji 745-751, 775-780) skipped. Retrained 250 epochs: loss 0.0094 -> 0.0083, TP 197 -> 202, FP 9 -> 6.
+- **Invariants / Rules to Uphold**:
+  - Keep `min_gap_sec = 0.25`; rapid title-text cuts in intros are intentionally merged.
+  - After retraining, sync `model.json` into `clipcut_browser.js` and bump both `index.html` and `sw.js` cache versions.
