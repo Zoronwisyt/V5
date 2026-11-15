@@ -1618,7 +1618,37 @@
               </div>
             </label>
             <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+              <input type="file" id="xmlBeatVideoInput" accept="video/*,.mp4,.mov,.mkv,.webm" style="display: none;">
+              <button class="ph-btn primary" id="xmlBeatVideoBtn" type="button" style="flex: 1; justify-content: center;">Import Video (Auto 1080×1350 60fps)</button>
+              <button class="ph-btn" id="xmlBeatManualBtn" type="button" style="justify-content: center;">Manual</button>
               <button class="ph-btn" id="xmlBeatLoadSampleBtn" type="button" style="flex: 1; justify-content: center;">Load Demo Beat XML</button>
+            </div>
+            <div id="xmlBeatManualPanel" style="display: none; margin-top: 10px; padding-top: 10px; border-top: 2px dashed rgba(128,128,128,0.25);">
+              <div class="xmlbeat-grid-2" style="grid-template-columns: repeat(3, 1fr);">
+                <div class="control-group">
+                  <label class="field-label" for="xbManualWidth">Width</label>
+                  <input type="number" id="xbManualWidth" class="styled-input" value="1080" min="16">
+                </div>
+                <div class="control-group">
+                  <label class="field-label" for="xbManualHeight">Height</label>
+                  <input type="number" id="xbManualHeight" class="styled-input" value="1350" min="16">
+                </div>
+                <div class="control-group">
+                  <label class="field-label" for="xbManualFps">FPS</label>
+                  <input type="number" id="xbManualFps" class="styled-input" value="60" min="1" max="240">
+                </div>
+              </div>
+              <div class="xmlbeat-grid-2" style="margin-top: 8px; align-items: end;">
+                <div class="control-group">
+                  <label class="field-label" for="xbManualBeatSec">Add Beat (sec)</label>
+                  <input type="number" id="xbManualBeatSec" class="styled-input" step="0.01" min="0" value="0.00">
+                </div>
+                <div style="display: flex; gap: 6px;">
+                  <button class="ph-btn" id="xbManualAddBeatBtn" type="button" style="flex: 1; justify-content: center;">+ Beat</button>
+                  <button class="ph-btn primary" id="xbManualApplyBtn" type="button" style="flex: 1; justify-content: center;">Apply</button>
+                  <button class="ph-btn" id="xbManualClearBeatsBtn" type="button" title="Clear all bookmarks">Clear</button>
+                </div>
+              </div>
             </div>
             <div id="xmlBeatProjectInfo" class="conv-status" style="margin-top: 8px;">Import an Alight Motion XML file to analyze beat markers and groups.</div>
           </div>
@@ -3361,6 +3391,7 @@
   <!-- GSAP & ScrollTrigger for Staggered Card Entrances -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-  <script src="fx.js?v=5.2"></script>
+  <script src="clipcut_browser.js?v=1.0"></script>
+  <script src="fx.js?v=5.3"></script>
 </body>
 </html>

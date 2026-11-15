@@ -1,0 +1,5 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+gradio>=4.44.0
+opencv-python-headless>=4.10.0
+numpy>=1.26.0
+torch>=2.4.0

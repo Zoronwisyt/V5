@@ -1516,3 +1516,22 @@ At the end of every prompt where changes are made:
   - Verified `fx.js` syntax with `node --check` (exit code 0).
 - **Invariants / Rules to Uphold**:
   - Never clear `flippy_v5_saved_presets`, `flippy_saved_presets_universal`, or `FlippyPresetVaultDB` on future updates.
+
+
+### 2026-11-15 — Import ClipCutNet Model & Video Auto-Bookmark (1080×1350 60fps) + Manual Mode
+- **Operator Request**: Import the trained clip-change model into Flippy v5 with identical comic GUI, allowing video import to auto-generate Alight Motion XML bookmarks at 1080×1350 60fps, plus a Manual button to edit settings/bookmarks manually.
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\clip_beat_marker\features.py` (added)
+  - `C:\Users\jeduc\Downloads\Flippy v5\clip_beat_marker\model.pt` (added)
+  - `C:\Users\jeduc\Downloads\Flippy v5\clip_beat_marker\detect_cuts.py` (added)
+  - `C:\Users\jeduc\Downloads\Flippy v5\server.js`
+  - `C:\Users\jeduc\Downloads\Flippy v5\index.html`
+  - `C:\Users\jeduc\Downloads\Flippy v5\fx.js`
+- **Specific Adjustments Made**:
+  - Added `POST /__flippy_detect_beats` in `server.js` to stream an uploaded video to a temp file, run `clip_beat_marker/detect_cuts.py` with `model.pt`, and return detected cut timestamps as JSON.
+  - Added `#xmlBeatVideoBtn` (`Import Video (Auto 1080×1350 60fps)`), `#xmlBeatManualBtn` (`Manual`), and `#xmlBeatManualPanel` (Width, Height, FPS, Add Beat, Apply, Clear) inside `#xmlbeat-panel` in `index.html` using existing `.ph-btn`, `.styled-input`, and `.xmlbeat-grid-2` styles.
+  - Wired video upload, automatic `1080×1350 @ 60fps` Alight Motion `<scene>` + `<bookmark t="..." />` generation, and manual editing handlers in `fx.js`.
+  - Verified `server.js` and `fx.js` with `node --check` and tested `detect_cuts.py --json-only` on `Yor Vs Shinobu Prob3.mp4` (`cut_count: 34`).
+- **Invariants / Rules to Uphold**:
+  - Keep `#xmlBeatManualPanel` collapsed by default so the GUI remains clean until `Manual` is clicked.
+  - Use `<bookmark t="<ms>" label="..." />` so Alight Motion and `#xmlbeat-panel` parse beat timestamps accurately.

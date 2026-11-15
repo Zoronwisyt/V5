@@ -367,6 +367,50 @@ const server = http.createServer(async (req, res) => {
     return handleTranscode(parsed, req, res);
   }
 
+  // Video -> ClipCutNet Beat Marker Detection
+  if (pathname === '/__flippy_detect_beats' && req.method === 'POST') {
+    const ext = (parsed.searchParams.get('ext') || '.mp4').replace(/[^a-zA-Z0-9.]/g, '') || '.mp4';
+    const tmpVideo = path.join(os.tmpdir(), `flippy_beat_${Date.now()}_${Math.random().toString(36).slice(2, 7)}${ext}`);
+    const ws = fs.createWriteStream(tmpVideo);
+    req.on('error', () => {
+      try { ws.destroy(); } catch {}
+      try { fs.unlinkSync(tmpVideo); } catch {}
+    });
+    req.pipe(ws);
+    ws.on('error', (err) => {
+      try { fs.unlinkSync(tmpVideo); } catch {}
+      sendJson(res, 500, { ok: false, error: 'Failed to save uploaded video: ' + err.message });
+    });
+    ws.on('finish', () => {
+      const scriptPath = path.join(__dirname, 'clip_beat_marker', 'detect_cuts.py');
+      const modelPath = path.join(__dirname, 'clip_beat_marker', 'model.pt');
+      const py = spawn('python', [scriptPath, tmpVideo, '--model', modelPath, '--json-only'], {
+        windowsHide: true
+      });
+      let out = '';
+      let errOut = '';
+      py.stdout.on('data', (d) => { out += d.toString(); });
+      py.stderr.on('data', (d) => { errOut += d.toString(); });
+      py.on('close', (code) => {
+        try { fs.unlinkSync(tmpVideo); } catch {}
+        if (code !== 0) {
+          return sendJson(res, 500, { ok: false, error: errOut.trim() || `Beat detector exited with code ${code}` });
+        }
+        try {
+          const data = JSON.parse(out.trim());
+          return sendJson(res, 200, { ok: true, ...data });
+        } catch (e) {
+          return sendJson(res, 500, { ok: false, error: 'Invalid JSON from beat detector: ' + e.message });
+        }
+      });
+      py.on('error', (err) => {
+        try { fs.unlinkSync(tmpVideo); } catch {}
+        sendJson(res, 500, { ok: false, error: 'Failed to launch Python beat detector: ' + err.message });
+      });
+    });
+    return;
+  }
+
   // Alight Motion Share Link -> Project Metadata & XML Converter Resolver
   if (pathname === '/__fl5_am_link') {
     const rawUrl = (parsed.searchParams.get('url') || '').trim();
@@ -739,6 +783,7 @@ const server = http.createServer(async (req, res) => {
   });
 });
 
+server.requestTimeout = 0;
 server.listen(PORT, '0.0.0.0', () => {
   const nets = os.networkInterfaces();
   let lanIp = 'localhost';

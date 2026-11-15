@@ -1633,6 +1633,160 @@
 
   window.FlippyBeatXmlLoad = loadAlightXmlString;
 
+  // --- Video Auto-Bookmark (ClipCutNet 1080x1350 60fps) & Manual Editor ---
+  const xbVideoInput = document.getElementById('xmlBeatVideoInput');
+  const xbVideoBtn = document.getElementById('xmlBeatVideoBtn');
+  const xbManualBtn = document.getElementById('xmlBeatManualBtn');
+  const xbManualPanel = document.getElementById('xmlBeatManualPanel');
+  const xbManualWidth = document.getElementById('xbManualWidth');
+  const xbManualHeight = document.getElementById('xbManualHeight');
+  const xbManualFps = document.getElementById('xbManualFps');
+  const xbManualBeatSec = document.getElementById('xbManualBeatSec');
+  const xbManualAddBeatBtn = document.getElementById('xbManualAddBeatBtn');
+  const xbManualApplyBtn = document.getElementById('xbManualApplyBtn');
+  const xbManualClearBeatsBtn = document.getElementById('xbManualClearBeatsBtn');
+
+  function escXmlAttr(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function ensureXbSceneDoc(w = 1080, h = 1350, fps = 60, totalMs = 5000, title = 'Flippy Beat Project') {
+    if (xbDoc && xbDoc.querySelector('scene')) return xbDoc;
+    const blank = `<?xml version="1.0" encoding="utf-8"?>\n<scene title="${escXmlAttr(title)}" width="${w}" height="${h}" exportWidth="${w}" exportHeight="${h}" fps="${fps}" totalTime="${totalMs}" bgcolor="#ff000000">\n</scene>`;
+    loadAlightXmlString(blank, `${title.replace(/\s+/g, '_')}.xml`);
+    return xbDoc;
+  }
+
+  if (xbManualBtn && xbManualPanel) {
+    xbManualBtn.addEventListener('click', () => {
+      const open = xbManualPanel.style.display === 'none';
+      xbManualPanel.style.display = open ? 'block' : 'none';
+      xbManualBtn.classList.toggle('active', open);
+      if (open && xbDoc) {
+        const sc = xbDoc.querySelector('scene');
+        if (sc) {
+          if (xbManualWidth && sc.getAttribute('width')) xbManualWidth.value = sc.getAttribute('width');
+          if (xbManualHeight && sc.getAttribute('height')) xbManualHeight.value = sc.getAttribute('height');
+          if (xbManualFps && sc.getAttribute('fps')) xbManualFps.value = sc.getAttribute('fps');
+        }
+      }
+    });
+  }
+
+  if (xbVideoBtn && xbVideoInput) {
+    xbVideoBtn.addEventListener('click', () => xbVideoInput.click());
+    xbVideoInput.addEventListener('change', async () => {
+      const file = xbVideoInput.files && xbVideoInput.files[0];
+      if (!file) return;
+      const origText = xbVideoBtn.textContent;
+      xbVideoBtn.disabled = true;
+      xbVideoBtn.textContent = 'Analyzing Cuts...';
+      if (xbProjectInfo) xbProjectInfo.textContent = `Running ClipCutNet on ${file.name}...`;
+      try {
+        const ext = (file.name.match(/\.[a-z0-9]+$/i) || ['.mp4'])[0];
+        const isManualOpen = xbManualPanel && xbManualPanel.style.display !== 'none';
+        const w = isManualOpen && xbManualWidth ? Number(xbManualWidth.value) || 1080 : 1080;
+        const h = isManualOpen && xbManualHeight ? Number(xbManualHeight.value) || 1350 : 1350;
+        const fps = isManualOpen && xbManualFps ? Number(xbManualFps.value) || 60 : 60;
+
+        let data = null;
+        const isLocal = /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname);
+        if (isLocal) {
+          try {
+            const resp = await fetch(`/__flippy_detect_beats?ext=${encodeURIComponent(ext)}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/octet-stream' },
+              body: file
+            });
+            const json = await resp.json();
+            if (resp.ok && json.ok) data = json;
+          } catch {}
+        }
+
+        if (!data) {
+          if (typeof window.detectBeatsInBrowser !== 'function') {
+            throw new Error('In-browser ClipCutNet engine is not loaded.');
+          }
+          if (xbProjectInfo) xbProjectInfo.textContent = `Running In-Browser ClipCutNet on ${file.name}...`;
+          data = await window.detectBeatsInBrowser(file, {
+            fps,
+            onProgress: (pct, cur, tot) => {
+              xbVideoBtn.textContent = `Analyzing ${pct}%`;
+              if (xbProjectInfo) {
+                xbProjectInfo.textContent = `In-Browser ClipCutNet: ${pct}% (frame ${cur}/${tot})...`;
+              }
+            }
+          });
+        }
+
+        const totalMs = Math.max(1000, Math.round((data.duration_sec || 5) * 1000));
+        const stem = file.name.replace(/\.[^.]+$/, '') || 'Flippy_Beats';
+
+        const bookmarksXml = (data.cuts || [])
+          .map((c, idx) => `  <bookmark t="${c.time_ms}" label="Beat ${idx + 1}" />`)
+          .join('\n');
+        const xmlStr = `<?xml version="1.0" encoding="utf-8"?>\n<scene title="${escXmlAttr(stem)}" width="${w}" height="${h}" exportWidth="${w}" exportHeight="${h}" fps="${fps}" totalTime="${totalMs}" bgcolor="#ff000000">\n${bookmarksXml}\n</scene>`;
+        loadAlightXmlString(xmlStr, `${stem}_beats.xml`);
+        if (xbProjectInfo) {
+          const modeTag = data.engine === 'browser-clipcutnet' ? 'In-Browser ClipCutNet' : 'ClipCutNet';
+          xbProjectInfo.textContent = `${stem} · ${w}×${h} · ${fps}fps · ${data.cut_count} beat bookmarks (${modeTag})`;
+        }
+      } catch (err) {
+        if (xbProjectInfo) xbProjectInfo.textContent = `Beat detection failed: ${err.message}`;
+      } finally {
+        xbVideoBtn.disabled = false;
+        xbVideoBtn.textContent = origText;
+        xbVideoInput.value = '';
+      }
+    });
+  }
+
+  if (xbManualApplyBtn) {
+    xbManualApplyBtn.addEventListener('click', () => {
+      const w = Math.max(16, Number(xbManualWidth?.value) || 1080);
+      const h = Math.max(16, Number(xbManualHeight?.value) || 1350);
+      const fps = Math.max(1, Number(xbManualFps?.value) || 60);
+      const doc = ensureXbSceneDoc(w, h, fps);
+      const sc = doc.querySelector('scene');
+      if (!sc) return;
+      sc.setAttribute('width', String(w));
+      sc.setAttribute('height', String(h));
+      sc.setAttribute('exportWidth', String(w));
+      sc.setAttribute('exportHeight', String(h));
+      sc.setAttribute('fps', String(fps));
+      loadAlightXmlString(serializeXbDoc(), xbFilename);
+    });
+  }
+
+  if (xbManualAddBeatBtn) {
+    xbManualAddBeatBtn.addEventListener('click', () => {
+      const w = Math.max(16, Number(xbManualWidth?.value) || 1080);
+      const h = Math.max(16, Number(xbManualHeight?.value) || 1350);
+      const fps = Math.max(1, Number(xbManualFps?.value) || 60);
+      const tMs = Math.max(0, Math.round((Number(xbManualBeatSec?.value) || 0) * 1000));
+      const doc = ensureXbSceneDoc(w, h, fps, Math.max(5000, tMs + 1000));
+      const sc = doc.querySelector('scene');
+      if (!sc) return;
+      const bm = doc.createElement('bookmark');
+      bm.setAttribute('t', String(tMs));
+      bm.setAttribute('label', `Manual ${formatAlightClock(tMs)}`);
+      sc.appendChild(bm);
+      const total = Math.max(Number(sc.getAttribute('totalTime') || 5000), tMs + 500);
+      sc.setAttribute('totalTime', String(total));
+      loadAlightXmlString(serializeXbDoc(), xbFilename);
+    });
+  }
+
+  if (xbManualClearBeatsBtn) {
+    xbManualClearBeatsBtn.addEventListener('click', () => {
+      if (!xbDoc) return;
+      const sc = xbDoc.querySelector('scene');
+      if (!sc) return;
+      sc.querySelectorAll('bookmark').forEach((el) => el.remove());
+      loadAlightXmlString(serializeXbDoc(), xbFilename);
+    });
+  }
+
   if (xbStartSelect) {
     xbStartSelect.addEventListener('change', () => {
       const i = Number(xbStartSelect.value);
