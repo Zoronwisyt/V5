@@ -13,12 +13,12 @@ from features import extract_video_features
 
 
 class ClipCutNetV2(nn.Module):
-    def __init__(self, in_dim: int = 12):
+    def __init__(self, in_dim: int = 16, hidden_dim: int = 32):
         super().__init__()
         self.net = nn.Sequential(
-            nn.Linear(in_dim, 24),
+            nn.Linear(in_dim, hidden_dim),
             nn.ReLU(),
-            nn.Linear(24, 1),
+            nn.Linear(hidden_dim, 1),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -35,13 +35,14 @@ def detect_cuts_with_model(
     duration_sec = total_frames / fps if fps > 0 else 0.0
 
     ckpt = torch.load(model_path, map_location="cpu", weights_only=True)
-    in_dim = ckpt.get("in_dim", 12)
-    model = ClipCutNetV2(in_dim=in_dim)
+    in_dim = ckpt.get("in_dim", 16)
+    hidden_dim = ckpt.get("hidden_dim", 32 if in_dim >= 16 else 24)
+    model = ClipCutNetV2(in_dim=in_dim, hidden_dim=hidden_dim)
     model.load_state_dict(ckpt["state_dict"])
     model.eval()
 
     with torch.no_grad():
-        logits = model(torch.from_numpy(feats))
+        logits = model(torch.from_numpy(feats[:, :in_dim]))
         probs = torch.sigmoid(logits).numpy()
 
     min_gap_frames = max(1, int(round(min_gap_sec * fps)))
@@ -49,8 +50,9 @@ def detect_cuts_with_model(
     for i in range(len(probs)):
         p = float(probs[i])
         if p >= prob_threshold:
-            # Anchor rank on instant 1-frame cut sharpness so i+/-2 never steals the peak
-            rank = p + 0.25 * float(feats[i, 0]) + 0.25 * float(feats[i, 1])
+            # Anchor rank on instant 1-frame cut sharpness + video-lens changed_frac so i+/-2 never steals the peak
+            cf_bonus = (0.15 * float(feats[i, 12]) + 0.10 * float(feats[i, 14])) if feats.shape[1] >= 16 else 0.0
+            rank = p + 0.22 * float(feats[i, 0]) + 0.20 * float(feats[i, 1]) + cf_bonus
             candidates.append((rank, i, p))
 
     candidates.sort(key=lambda x: x[0], reverse=True)
@@ -80,7 +82,7 @@ def detect_cuts_with_model(
         cuts.append({
             "frame": frame_idx,
             "time_sec": round(t_sec, 4),
-            "time_ms": int(math.ceil((frame_idx * 1000.0) / fps - 1e-9)),
+            "time_ms": int(math.ceil((frame_idx * 1000.0) / fps - 1e-5)),
             "score": round(p, 4),
             "kind": kind,
             "label": label,

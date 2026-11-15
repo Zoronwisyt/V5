@@ -1609,3 +1609,27 @@ At the end of every prompt where changes are made:
 - **Invariants / Rules to Uphold**:
   - Keep `min_gap_sec = 0.25`; rapid title-text cuts in intros are intentionally merged.
   - After retraining, sync `model.json` into `clipcut_browser.js` and bump both `index.html` and `sw.js` cache versions.
+
+
+### 2026-11-15 — ClipCutNetV3 (320×180 + video-lens Pixel/Ratio Features, Black-Noise Fix & Deliberate Frame Settle)
+- **Operator Request**: Ensure XML millisecond timing never drifts by 1 ms, make the model take its time per frame for maximum accuracy, and incorporate the `video-lens` skill.
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\clip_beat_marker\features.py`
+  - `C:\Users\jeduc\Downloads\Flippy v5\clip_beat_marker\train_model.py`
+  - `C:\Users\jeduc\Downloads\Flippy v5\clip_beat_marker\detect_cuts.py`
+  - `C:\Users\jeduc\Downloads\Flippy v5\clip_beat_marker\model.pt`, `model.json`
+  - `C:\Users\jeduc\Downloads\Flippy v5\clipcut_browser.js` (`v=2.5`)
+  - `C:\Users\jeduc\Downloads\Flippy v5\fx.js`
+  - `C:\Users\jeduc\Downloads\Flippy v5\index.html`
+  - `C:\Users\jeduc\Downloads\Flippy v5\sw.js` (`flippy-v5-pwa-v3`)
+  - `C:\Users\jeduc\Downloads\Test Training\Clipcut test 3.xml`
+  - `c:\Users\jeduc\Downloads\Clipcut 2 test.xml`
+- **Specific Adjustments Made**:
+  - Upgraded feature extraction in `features.py` and `clipcut_browser.js` from `160×90` (12D) to `320×180` (16D) with `3×3` binomial Gaussian anti-noise blur (`[0.25, 0.5, 0.25]`, matching `video-lens/scripts/vl/survey.py`).
+  - Added `4` `video-lens`-derived features (`inst_changed_frac`, `pers_changed_frac`, `local_cf_ratio` over `±0.25s`, and `seam_level`), upgrading `ClipCutNetV2` to `ClipCutNetV3` (`16 -> 32 -> 1`).
+  - Fixed near-black macroblock HSV noise discovered via `video-lens` inspection (`Solarmas` frame 605): collapsed dark pixels (`V < 18`) into HSV bin `(0, 0)`, eliminating the false black-screen trigger completely (`Solarmas: 29/29 exact`, `TP=201, FP=11, FN=1, loss=0.0068`).
+  - Added deliberate per-frame compositor settle (`settleVideoFrame()` via `requestAnimationFrame` capped at `18ms`) and a ~2 MB sliding pixel buffer ring in `clipcut_browser.js`, plus `Math.round(duration * fps)` step count and `Math.ceil((frameIdx * 1000) / fps - 1e-5)` in both Python and JS (plus manual-FPS re-ceil in `fx.js`).
+  - Verified `0` diffs across all 34 bookmarks between `Clipcut test 3.xml` and native Alight Motion iOS export `Project Name 330.xml`.
+- **Invariants / Rules to Uphold**:
+  - Keep `V < 18` dark-bin collapse and `320×180` `[0.25, 0.5, 0.25]` Gaussian smoothing identical between `features.py` and `clipcut_browser.js`.
+  - Keep `Math.ceil((frameIdx * 1000) / fps - 1e-5)` for all XML frame-to-ms exports.

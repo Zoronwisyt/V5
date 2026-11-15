@@ -10,12 +10,12 @@ from features import extract_video_features
 
 
 class ClipCutNetV2(nn.Module):
-    def __init__(self, in_dim: int = 12):
+    def __init__(self, in_dim: int = 16, hidden_dim: int = 32):
         super().__init__()
         self.net = nn.Sequential(
-            nn.Linear(in_dim, 24),
+            nn.Linear(in_dim, hidden_dim),
             nn.ReLU(),
-            nn.Linear(24, 1),
+            nn.Linear(hidden_dim, 1),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -171,7 +171,7 @@ def train(videos: list[str], out_model: str, epochs: int = 200, vl_cuts: str = "
     vl_map = json.loads(Path(vl_cuts).read_text(encoding="utf-8")) if vl_cuts and Path(vl_cuts).exists() else {}
 
     for v in videos:
-        print(f"Extracting 12D features: {v}")
+        print(f"Extracting 16D 320x180 features: {v}")
         feats, _, fps, total_frames = extract_video_features(v)
         labels = pseudo_label_who_is_strongest(feats, fps)
         labels = apply_video_lens_cuts(v, feats, labels, vl_map)
@@ -190,7 +190,9 @@ def train(videos: list[str], out_model: str, epochs: int = 200, vl_cuts: str = "
     neg_count = max(1.0, float(len(y_np) - pos_count))
     pos_weight = torch.tensor([min(18.0, neg_count / pos_count)], dtype=torch.float32)
 
-    model = ClipCutNetV2(in_dim=12)
+    in_dim = int(x_np.shape[1])
+    hidden_dim = 32 if in_dim >= 16 else 24
+    model = ClipCutNetV2(in_dim=in_dim, hidden_dim=hidden_dim)
     criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.02, weight_decay=1e-4)
 
@@ -213,7 +215,7 @@ def train(videos: list[str], out_model: str, epochs: int = 200, vl_cuts: str = "
 
     out_path = Path(out_model)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    torch.save({"state_dict": model.state_dict(), "in_dim": 12, "version": 2}, out_path)
+    torch.save({"state_dict": model.state_dict(), "in_dim": in_dim, "hidden_dim": hidden_dim, "version": 3}, out_path)
     print(f"Saved trained v2 model to: {out_path}")
 
     weights_json = {k: v.tolist() for k, v in model.state_dict().items()}
