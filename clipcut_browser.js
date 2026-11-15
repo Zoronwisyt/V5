@@ -184,18 +184,25 @@
       return s / (w * 3 * 255.0);
     };
 
-    // Scaled seam bands for H = 180 (rows 84..96 vs surrounding 72..81 and 99..108)
+    // Scaled seam bands relative to 180px baseline height (exact 84..96 vs 72..81 & 99..108 at H=180)
+    const bandLo = Math.max(1, Math.round((84 * h) / 180));
+    const bandHi = Math.min(h - 1, Math.round((96 * h) / 180));
+    const surrALo = Math.max(1, Math.round((72 * h) / 180));
+    const surrAHi = Math.min(h - 1, Math.round((81 * h) / 180));
+    const surrBLo = Math.max(1, Math.round((99 * h) / 180));
+    const surrBHi = Math.min(h - 1, Math.round((108 * h) / 180));
+
     let dBandMax = 0;
-    for (let y = 84; y <= 96; y++) {
+    for (let y = bandLo; y <= bandHi; y++) {
       const d = rowDiff(y);
       if (d > dBandMax) dBandMax = d;
     }
     let surrA = 0;
-    for (let y = 72; y <= 81; y++) surrA += rowDiff(y);
-    surrA /= 10;
+    for (let y = surrALo; y <= surrAHi; y++) surrA += rowDiff(y);
+    surrA /= Math.max(1, surrAHi - surrALo + 1);
     let surrB = 0;
-    for (let y = 99; y <= 108; y++) surrB += rowDiff(y);
-    surrB /= 10;
+    for (let y = surrBLo; y <= surrBHi; y++) surrB += rowDiff(y);
+    surrB /= Math.max(1, surrBHi - surrBLo + 1);
 
     const seam = dBandMax / (0.5 * (surrA + surrB) + 0.006);
 
@@ -237,7 +244,10 @@
     };
   }
 
-  function settleVideoFrame() {
+  function settleVideoFrame(settleFrames = 1, settleMs = 18) {
+    if (settleFrames <= 0 || settleMs <= 0) {
+      return Promise.resolve();
+    }
     return new Promise((resolve) => {
       let done = false;
       const finish = () => {
@@ -245,13 +255,28 @@
         done = true;
         resolve();
       };
-      // Wait 1 compositor frame (~8-16ms) with timer cap so backgrounded tabs never stall
-      setTimeout(finish, 18);
+      // Wait compositor frames with timer cap so backgrounded tabs never stall
+      setTimeout(finish, settleMs);
       if (typeof requestAnimationFrame === 'function') {
-        requestAnimationFrame(() => setTimeout(finish, 0));
+        const stepRaf = (left) => {
+          requestAnimationFrame(() => {
+            if (done) return;
+            if (left <= 1) setTimeout(finish, 0);
+            else stepRaf(left - 1);
+          });
+        };
+        stepRaf(settleFrames);
       }
     });
   }
+
+  const ACCURACY_PRESETS = {
+    1: { level: 1, name: 'Turbo', W: 160, H: 90, frameStep: 3, settleFrames: 0, settleMs: 0, probThreshold: 0.72, refineWindow: 0 },
+    2: { level: 2, name: 'Fast', W: 160, H: 90, frameStep: 2, settleFrames: 0, settleMs: 0, probThreshold: 0.74, refineWindow: 0 },
+    3: { level: 3, name: 'Default', W: 320, H: 180, frameStep: 1, settleFrames: 1, settleMs: 18, probThreshold: 0.75, refineWindow: 0 },
+    4: { level: 4, name: 'High', W: 480, H: 270, frameStep: 1, settleFrames: 2, settleMs: 28, probThreshold: 0.73, refineWindow: 1 },
+    5: { level: 5, name: 'Ultra', W: 640, H: 360, frameStep: 1, settleFrames: 2, settleMs: 42, probThreshold: 0.70, refineWindow: 2 },
+  };
 
   function seekVideo(video, timeSec) {
     return new Promise((resolve, reject) => {
@@ -291,7 +316,9 @@
 
   window.detectBeatsInBrowser = async function detectBeatsInBrowser(file, options = {}) {
     const fps = Number(options.fps) || 60;
-    const probThreshold = Number(options.probThreshold) || 0.75;
+    const accuracyLevel = Math.max(1, Math.min(5, Math.round(Number(options.accuracy) || 3)));
+    const preset = ACCURACY_PRESETS[accuracyLevel] || ACCURACY_PRESETS[3];
+    const probThreshold = Number(options.probThreshold) || preset.probThreshold;
     const minGapSec = Number(options.minGapSec) || 0.25;
     const onProgress = typeof options.onProgress === 'function' ? options.onProgress : null;
 
@@ -330,19 +357,22 @@
         throw new Error('Could not read video duration.');
       }
 
-      const W = 320;
-      const H = 180;
+      const W = preset.W;
+      const H = preset.H;
+      const frameStep = preset.frameStep;
+      const effFps = fps / frameStep;
       const canvas = document.createElement('canvas');
       canvas.width = W;
       canvas.height = H;
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
-      const totalSteps = Math.max(2, Math.round(duration * fps));
+      const rawTotalFrames = Math.max(2, Math.round(duration * fps));
+      const totalSteps = Math.max(2, Math.round(rawTotalFrames / frameStep));
       const fullPx = W * H;
       const halfPx = (H >> 1) * W;
 
-      const k = Math.max(3, Math.round(0.10 * fps));
-      const localWin = Math.max(6, Math.round(0.25 * fps));
+      const k = Math.max(frameStep > 1 ? 2 : 3, Math.round(0.10 * effFps));
+      const localWin = Math.max(frameStep > 1 ? 4 : 6, Math.round(0.25 * effFps));
 
       // Lightweight per-frame metadata + sliding pixel buffer (keeps mobile RAM under ~5 MB)
       const framesMeta = new Array(totalSteps);
@@ -387,11 +417,12 @@
         if (evictIdx >= 0) pixelRing.delete(evictIdx);
       };
 
+      const scanPctCap = preset.refineWindow > 0 ? 88 : 100;
       for (let i = 0; i < totalSteps; i++) {
-        // Deliberately seek to midpoint & settle 1 compositor frame for crisp per-frame accuracy
-        const t = Math.min(duration - 0.001, (i + 0.5) / fps);
+        // Seek to frame midpoint & settle compositor frames per accuracy preset
+        const t = Math.min(duration - 0.001, (i * frameStep + 0.5) / fps);
         await seekVideo(video, t);
-        await settleVideoFrame();
+        await settleVideoFrame(preset.settleFrames, preset.settleMs);
         ctx.drawImage(video, 0, 0, W, H);
         const stats = extractFrameStats(ctx.getImageData(0, 0, W, H).data, W, H);
 
@@ -422,7 +453,7 @@
         }
 
         if (onProgress && (i % 4 === 0 || i === totalSteps - 1)) {
-          onProgress(Math.round((i / (totalSteps - 1)) * 100), i, totalSteps - 1);
+          onProgress(Math.round((i / (totalSteps - 1)) * scanPctCap), i, totalSteps - 1);
         }
       }
 
@@ -487,7 +518,7 @@
         ranks[idx] = p + 0.22 * instFullH[idx] + 0.20 * instFullL[idx] + 0.15 * instCFrac[idx] + 0.10 * localCfRatio;
       }
 
-      const minGapFrames = Math.max(1, Math.round(minGapSec * fps));
+      const minGapFrames = Math.max(1, Math.round(minGapSec * effFps));
       const candidates = [];
       for (let i = 0; i < probs.length; i++) {
         if (probs[i] >= probThreshold) {
@@ -504,17 +535,58 @@
       }
       selected.sort((a, b) => a.i - b.i);
 
+      // High/Ultra second-pass sub-window verification: re-seeks around each cut with extra compositor settle
+      if (preset.refineWindow > 0 && frameStep === 1 && selected.length > 0) {
+        const win = preset.refineWindow;
+        const extraSettleMs = preset.settleMs + 16;
+        for (let sIdx = 0; sIdx < selected.length; sIdx++) {
+          const c = selected[sIdx];
+          const loF = Math.max(0, c.i - win);
+          const hiF = Math.min(totalSteps - 1, c.i + 1 + win);
+          const subFrames = new Map();
+          for (let f = loF; f <= hiF; f++) {
+            const t = Math.min(duration - 0.001, (f + 0.5) / fps);
+            await seekVideo(video, t);
+            await settleVideoFrame(2, extraSettleMs);
+            ctx.drawImage(video, 0, 0, W, H);
+            subFrames.set(f, extractFrameStats(ctx.getImageData(0, 0, W, H).data, W, H));
+          }
+          let bestIdx = c.i;
+          let bestSharp = -1;
+          for (let j = Math.max(0, c.i - win); j <= Math.min(probs.length - 1, c.i + win); j++) {
+            const sa = subFrames.get(j);
+            const sb = subFrames.get(j + 1);
+            if (!sa || !sb) continue;
+            const ih = bhattacharyya(sa.histFull, sb.histFull, fullPx);
+            const dm = diffMetricsU8(sa.blurU8, sb.blurU8, fullPx, 20);
+            const sharp = (0.45 * probs[j]) + 0.28 * ih + 0.24 * dm.mae + 0.18 * dm.changedFrac;
+            if (sharp > bestSharp) {
+              bestSharp = sharp;
+              bestIdx = j;
+            }
+          }
+          if (bestIdx !== c.i && probs[bestIdx] >= probThreshold - 0.12) {
+            c.i = bestIdx;
+            c.p = Math.max(c.p, probs[bestIdx]);
+          }
+          if (onProgress) {
+            const pct = 88 + Math.round(((sIdx + 1) / selected.length) * 12);
+            onProgress(pct, totalSteps - 1, totalSteps - 1);
+          }
+        }
+      }
+
       const cuts = [];
       let catCount = 0;
       let winCount = 0;
 
       for (const c of selected) {
-        const frameIdx = c.i + 1;
+        const frameIdx = (c.i + 1) * frameStep;
         const tSec = frameIdx / fps;
-        const lookIdx = Math.min(totalSteps - 1, frameIdx + 2);
+        const lookStep = Math.min(totalSteps - 1, (c.i + 1) + Math.max(1, Math.round(2 / frameStep)));
         let kind = 'Winner';
         let label = '';
-        if (isSplit[lookIdx]) {
+        if (isSplit[lookStep]) {
           catCount++;
           kind = 'Category';
           label = `Category ${catCount}`;
@@ -538,8 +610,10 @@
       return {
         ok: true,
         engine: 'browser-clipcutnet-v3',
+        accuracy: accuracyLevel,
+        accuracy_label: preset.name,
         fps,
-        total_frames: totalSteps,
+        total_frames: rawTotalFrames,
         duration_sec: Number(duration.toFixed(3)),
         cut_count: cuts.length,
         cuts,

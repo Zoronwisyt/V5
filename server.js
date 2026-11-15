@@ -371,6 +371,8 @@ const server = http.createServer(async (req, res) => {
   // Video -> ClipCutNet Beat Marker Detection
   if (pathname === '/__flippy_detect_beats' && req.method === 'POST') {
     const ext = (parsed.searchParams.get('ext') || '.mp4').replace(/[^a-zA-Z0-9.]/g, '') || '.mp4';
+    const rawAcc = parseInt(parsed.searchParams.get('accuracy') || '3', 10);
+    const accuracy = Number.isFinite(rawAcc) ? Math.max(1, Math.min(5, rawAcc)) : 3;
     const tmpVideo = path.join(os.tmpdir(), `flippy_beat_${Date.now()}_${Math.random().toString(36).slice(2, 7)}${ext}`);
     const ws = fs.createWriteStream(tmpVideo);
     req.on('error', () => {
@@ -385,7 +387,7 @@ const server = http.createServer(async (req, res) => {
     ws.on('finish', () => {
       const scriptPath = path.join(__dirname, 'clip_beat_marker', 'detect_cuts.py');
       const modelPath = path.join(__dirname, 'clip_beat_marker', 'model.pt');
-      const py = spawn('python', [scriptPath, tmpVideo, '--model', modelPath, '--json-only'], {
+      const py = spawn('python', [scriptPath, tmpVideo, '--model', modelPath, '--accuracy', String(accuracy), '--json-only'], {
         windowsHide: true
       });
       let out = '';

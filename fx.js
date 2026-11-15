@@ -1645,6 +1645,39 @@
   const xbManualAddBeatBtn = document.getElementById('xbManualAddBeatBtn');
   const xbManualApplyBtn = document.getElementById('xbManualApplyBtn');
   const xbManualClearBeatsBtn = document.getElementById('xbManualClearBeatsBtn');
+  const xbAccuracyInput = document.getElementById('xmlBeatAccuracy');
+  const xbAccuracyLabel = document.getElementById('xmlBeatAccuracyLabel');
+
+  const XB_ACC_LABELS = {
+    1: '1 · Turbo (Fastest)',
+    2: '2 · Fast',
+    3: '3 · Default',
+    4: '4 · High (Slower)',
+    5: '5 · Ultra (Slowest)',
+  };
+
+  function getXbAccuracy() {
+    const raw = xbAccuracyInput ? Number(xbAccuracyInput.value) : 3;
+    return Math.max(1, Math.min(5, Math.round(raw || 3)));
+  }
+
+  function syncXbAccuracyUi() {
+    const acc = getXbAccuracy();
+    if (xbAccuracyInput && Number(xbAccuracyInput.value) !== acc) xbAccuracyInput.value = String(acc);
+    if (xbAccuracyLabel) xbAccuracyLabel.textContent = XB_ACC_LABELS[acc] || XB_ACC_LABELS[3];
+  }
+
+  if (xbAccuracyInput) {
+    try {
+      const savedAcc = Number(localStorage.getItem('flippy_v5_beat_accuracy'));
+      if (savedAcc >= 1 && savedAcc <= 5) xbAccuracyInput.value = String(Math.round(savedAcc));
+    } catch {}
+    syncXbAccuracyUi();
+    xbAccuracyInput.addEventListener('input', () => {
+      syncXbAccuracyUi();
+      try { localStorage.setItem('flippy_v5_beat_accuracy', String(getXbAccuracy())); } catch {}
+    });
+  }
 
   function escXmlAttr(s) {
     return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -1688,12 +1721,14 @@
         const w = isManualOpen && xbManualWidth ? Number(xbManualWidth.value) || 1080 : 1080;
         const h = isManualOpen && xbManualHeight ? Number(xbManualHeight.value) || 1350 : 1350;
         const fps = isManualOpen && xbManualFps ? Number(xbManualFps.value) || 60 : 60;
+        const accuracy = getXbAccuracy();
+        const accLabel = XB_ACC_LABELS[accuracy] || XB_ACC_LABELS[3];
 
         let data = null;
         const isLocal = /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname);
         if (isLocal) {
           try {
-            const resp = await fetch(`/__flippy_detect_beats?ext=${encodeURIComponent(ext)}`, {
+            const resp = await fetch(`/__flippy_detect_beats?ext=${encodeURIComponent(ext)}&accuracy=${accuracy}`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/octet-stream' },
               body: file
@@ -1707,13 +1742,14 @@
           if (typeof window.detectBeatsInBrowser !== 'function') {
             throw new Error('In-browser ClipCutNet engine is not loaded.');
           }
-          if (xbProjectInfo) xbProjectInfo.textContent = `Running In-Browser ClipCutNet on ${file.name}...`;
+          if (xbProjectInfo) xbProjectInfo.textContent = `Running In-Browser ClipCutNet (${accLabel}) on ${file.name}...`;
           data = await window.detectBeatsInBrowser(file, {
             fps,
+            accuracy,
             onProgress: (pct, cur, tot) => {
               xbVideoBtn.textContent = `Analyzing ${pct}%`;
               if (xbProjectInfo) {
-                xbProjectInfo.textContent = `In-Browser ClipCutNet: ${pct}% (frame ${cur}/${tot})...`;
+                xbProjectInfo.textContent = `In-Browser ClipCutNet (${accLabel}): ${pct}% (frame ${cur}/${tot})...`;
               }
             }
           });
@@ -1734,7 +1770,7 @@
         loadAlightXmlString(xmlStr, `${stem}_beats.xml`);
         if (xbProjectInfo) {
           const modeTag = String(data.engine || '').startsWith('browser-') ? 'In-Browser ClipCutNet v3' : 'ClipCutNet v3';
-          xbProjectInfo.textContent = `${stem} · ${w}×${h} · ${fps}fps · ${data.cut_count} Category/Winner cuts (${modeTag})`;
+          xbProjectInfo.textContent = `${stem} · ${w}×${h} · ${fps}fps · ${data.cut_count} Category/Winner cuts (${modeTag} · ${accLabel})`;
         }
       } catch (err) {
         if (xbProjectInfo) xbProjectInfo.textContent = `Beat detection failed: ${err.message}`;

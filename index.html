@@ -1625,6 +1625,20 @@
               <button class="ph-btn" id="xmlBeatManualBtn" type="button" style="justify-content: center;">Manual</button>
               <button class="ph-btn" id="xmlBeatLoadSampleBtn" type="button" style="flex: 1; justify-content: center;">Load Demo Beat XML</button>
             </div>
+            <div class="control-group" style="margin-top: 10px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px;">
+                <label class="field-label" for="xmlBeatAccuracy" style="margin: 0;">Cut Detection Accuracy</label>
+                <span class="range-value" id="xmlBeatAccuracyLabel" style="min-width: auto; font-size: 11px;">3 · Default</span>
+              </div>
+              <div class="range-row">
+                <input type="range" id="xmlBeatAccuracy" min="1" max="5" step="1" value="3" aria-label="Clip cut detection accuracy">
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 10px; opacity: 0.72; margin-top: 2px;">
+                <span>1 Faster</span>
+                <span>3 Default</span>
+                <span>5 Max Accuracy (Slower)</span>
+              </div>
+            </div>
             <div id="xmlBeatManualPanel" style="display: none; margin-top: 10px; padding-top: 10px; border-top: 2px dashed rgba(128,128,128,0.25);">
               <div class="xmlbeat-grid-2" style="grid-template-columns: repeat(3, 1fr);">
                 <div class="control-group">
@@ -3393,8 +3407,8 @@
   <!-- GSAP & ScrollTrigger for Staggered Card Entrances -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-  <script src="clipcut_browser.js?v=2.5"></script>
-  <script src="fx.js?v=5.4"></script>
+  <script src="clipcut_browser.js?v=2.6"></script>
+  <script src="fx.js?v=5.5"></script>
   <script>
     if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.protocol === 'http:')) {
       window.addEventListener('load', () => {

@@ -1,12 +1,12 @@
-﻿const CACHE_NAME = 'flippy-v5-pwa-v3';
+﻿const CACHE_NAME = 'flippy-v5-pwa-v4';
 const CORE_ASSETS = [
   './',
   './index.html',
   './manifest.webmanifest',
   './styles.css?v=5.2',
   './editing_tab.css?v=1.0',
-  './clipcut_browser.js?v=2.5',
-  './fx.js?v=5.4',
+  './clipcut_browser.js?v=2.6',
+  './fx.js?v=5.5',
   './app.js',
   './apple-touch-icon.png',
   './favicon.png'

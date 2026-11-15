@@ -5,11 +5,12 @@ import os
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+import cv2
 import numpy as np
 import torch
 import torch.nn as nn
 
-from features import extract_video_features
+from features import extract_video_features, get_accuracy_preset
 
 
 class ClipCutNetV2(nn.Module):
@@ -25,13 +26,65 @@ class ClipCutNetV2(nn.Module):
         return self.net(x).squeeze(-1)
 
 
+def _refine_cuts_highres(
+    video_path: str,
+    selected: list[tuple[int, float]],
+    probs: np.ndarray,
+    feats: np.ndarray,
+    refine_win: int,
+    prob_threshold: float,
+) -> list[tuple[int, float]]:
+    """Second-pass high-res area verification around each candidate transition."""
+    if refine_win <= 0 or not selected:
+        return selected
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        return selected
+    refined = []
+    try:
+        for i, p in selected:
+            lo = max(0, i - refine_win)
+            hi = min(len(probs) - 1, i + refine_win)
+            frames = {}
+            for f_idx in range(lo, hi + 2):
+                cap.set(cv2.CAP_PROP_POS_FRAMES, f_idx)
+                ret, frm = cap.read()
+                if ret and frm is not None:
+                    frames[f_idx] = cv2.resize(frm, (640, 360), interpolation=cv2.INTER_AREA).astype(np.float32) / 255.0
+            best_i, best_sharp = i, -1.0
+            for j in range(lo, hi + 1):
+                if j in frames and (j + 1) in frames:
+                    mae = float(np.mean(np.abs(frames[j + 1] - frames[j])))
+                else:
+                    mae = float(feats[j, 1])
+                cf = float(feats[j, 12]) if feats.shape[1] >= 16 else 0.0
+                sharp = 0.45 * float(probs[j]) + 0.30 * float(feats[j, 0]) + 0.25 * mae + 0.12 * cf
+                if sharp > best_sharp:
+                    best_sharp = sharp
+                    best_i = j
+            if best_i != i and float(probs[best_i]) >= max(0.50, prob_threshold - 0.12):
+                refined.append((best_i, float(max(p, probs[best_i]))))
+            else:
+                refined.append((i, p))
+    finally:
+        cap.release()
+    return refined
+
+
 def detect_cuts_with_model(
     video_path: str,
     model_path: str,
-    prob_threshold: float = 0.75,
+    prob_threshold: float | None = None,
     min_gap_sec: float = 0.25,
+    accuracy: int = 3,
 ) -> dict:
-    feats, is_split, fps, total_frames = extract_video_features(video_path)
+    acc_level = max(1, min(5, int(round(accuracy))))
+    preset = get_accuracy_preset(acc_level)
+    frame_step = preset["frame_step"]
+    eff_thresh = float(prob_threshold if prob_threshold is not None else preset["prob_threshold"])
+
+    feats, is_split, fps, sample_count = extract_video_features(video_path, accuracy=acc_level)
+    total_frames = sample_count * frame_step
     duration_sec = total_frames / fps if fps > 0 else 0.0
 
     ckpt = torch.load(model_path, map_location="cpu", weights_only=True)
@@ -45,11 +98,12 @@ def detect_cuts_with_model(
         logits = model(torch.from_numpy(feats[:, :in_dim]))
         probs = torch.sigmoid(logits).numpy()
 
-    min_gap_frames = max(1, int(round(min_gap_sec * fps)))
+    eff_fps = fps / frame_step
+    min_gap_frames = max(1, int(round(min_gap_sec * eff_fps)))
     candidates = []
     for i in range(len(probs)):
         p = float(probs[i])
-        if p >= prob_threshold:
+        if p >= eff_thresh:
             # Anchor rank on instant 1-frame cut sharpness + video-lens changed_frac so i+/-2 never steals the peak
             cf_bonus = (0.15 * float(feats[i, 12]) + 0.10 * float(feats[i, 14])) if feats.shape[1] >= 16 else 0.0
             rank = p + 0.22 * float(feats[i, 0]) + 0.20 * float(feats[i, 1]) + cf_bonus
@@ -62,14 +116,18 @@ def detect_cuts_with_model(
             selected.append((i, p))
 
     selected.sort(key=lambda x: x[0])
+    if preset["refine_win"] > 0 and frame_step == 1:
+        selected = _refine_cuts_highres(video_path, selected, probs, feats, preset["refine_win"], eff_thresh)
+        selected.sort(key=lambda x: x[0])
+
     cuts = []
     cat_count = 0
     win_count = 0
 
     for i, p in selected:
-        frame_idx = i + 1
+        frame_idx = (i + 1) * frame_step
         t_sec = frame_idx / fps
-        look_idx = min(len(is_split) - 1, frame_idx + 2)
+        look_idx = min(len(is_split) - 1, (i + 1) + max(1, int(round(2 / frame_step))))
         if is_split[look_idx]:
             cat_count += 1
             kind = "Category"
@@ -90,6 +148,8 @@ def detect_cuts_with_model(
 
     return {
         "video": video_path,
+        "accuracy": acc_level,
+        "accuracy_label": preset["name"],
         "fps": round(fps, 3),
         "total_frames": total_frames,
         "duration_sec": round(duration_sec, 3),
@@ -144,7 +204,8 @@ def main():
     parser = argparse.ArgumentParser(description="Detect Who-is-Strongest cuts with ClipCutNetV2.")
     parser.add_argument("video", help="Path to input video")
     parser.add_argument("--model", default=str(Path(__file__).with_name("model.pt")), help="Path to model.pt")
-    parser.add_argument("--prob-threshold", type=float, default=0.75)
+    parser.add_argument("--accuracy", type=int, default=3, choices=[1, 2, 3, 4, 5], help="1=Turbo(fastest) .. 3=Default .. 5=Ultra(slowest)")
+    parser.add_argument("--prob-threshold", type=float, default=None)
     parser.add_argument("--min-gap", type=float, default=0.25)
     parser.add_argument("--width", type=int, default=1080)
     parser.add_argument("--height", type=int, default=1350)
@@ -159,6 +220,7 @@ def main():
         args.model,
         prob_threshold=args.prob_threshold,
         min_gap_sec=args.min_gap,
+        accuracy=args.accuracy,
     )
 
     if args.json_only:

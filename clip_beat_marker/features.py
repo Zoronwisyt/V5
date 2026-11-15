@@ -3,6 +3,19 @@ import numpy as np
 
 _GAUSS_1D = np.array([0.25, 0.5, 0.25], dtype=np.float32)
 
+ACCURACY_PRESETS = {
+    1: {"name": "Turbo", "width": 160, "height": 90, "frame_step": 3, "prob_threshold": 0.72, "refine_win": 0},
+    2: {"name": "Fast", "width": 160, "height": 90, "frame_step": 2, "prob_threshold": 0.74, "refine_win": 0},
+    3: {"name": "Default", "width": 320, "height": 180, "frame_step": 1, "prob_threshold": 0.75, "refine_win": 0},
+    4: {"name": "High", "width": 480, "height": 270, "frame_step": 1, "prob_threshold": 0.73, "refine_win": 1},
+    5: {"name": "Ultra", "width": 640, "height": 360, "frame_step": 1, "prob_threshold": 0.70, "refine_win": 2},
+}
+
+
+def get_accuracy_preset(accuracy: int = 3) -> dict:
+    lvl = max(1, min(5, int(round(accuracy))))
+    return ACCURACY_PRESETS[lvl]
+
 
 def _frame_hist_hs(bgr_small: np.ndarray) -> np.ndarray:
     hsv = cv2.cvtColor(bgr_small, cv2.COLOR_BGR2HSV)
@@ -23,13 +36,20 @@ def _bhattacharyya(h1: np.ndarray, h2: np.ndarray) -> float:
 
 def _seam_spike(rgb_f: np.ndarray) -> float:
     """
-    Detect horizontal split-screen seam across y = H/2 (180px height -> mid=90).
-    Compares max row-to-row color jump near mid (rows 84..96)
-    against surrounding texture above (72..82) and below (98..108).
+    Detect horizontal split-screen seam across y = H/2 (180px baseline -> mid=90).
+    Compares max row-to-row color jump near mid against surrounding texture.
     """
-    d_band = [float(np.mean(np.abs(rgb_f[y] - rgb_f[y - 1]))) for y in range(84, 97)]
-    surr_a = float(np.mean(np.abs(rgb_f[72:82] - rgb_f[71:81])))
-    surr_b = float(np.mean(np.abs(rgb_f[99:109] - rgb_f[98:108])))
+    h = rgb_f.shape[0]
+    band_lo = max(1, int(round(84 * h / 180)))
+    band_hi = min(h - 1, int(round(96 * h / 180)))
+    sa_lo = max(1, int(round(72 * h / 180)))
+    sa_hi = min(h - 1, int(round(81 * h / 180)))
+    sb_lo = max(1, int(round(99 * h / 180)))
+    sb_hi = min(h - 1, int(round(108 * h / 180)))
+
+    d_band = [float(np.mean(np.abs(rgb_f[y] - rgb_f[y - 1]))) for y in range(band_lo, band_hi + 1)]
+    surr_a = float(np.mean(np.abs(rgb_f[sa_lo : sa_hi + 1] - rgb_f[sa_lo - 1 : sa_hi])))
+    surr_b = float(np.mean(np.abs(rgb_f[sb_lo : sb_hi + 1] - rgb_f[sb_lo - 1 : sb_hi])))
     surr = 0.5 * (surr_a + surr_b) + 0.006
     return max(d_band) / surr
 
@@ -41,27 +61,46 @@ def _changed_frac(a_u8: np.ndarray, b_u8: np.ndarray, pix: int = 20) -> float:
     return float(np.count_nonzero(cmax > pix)) / float(cmax.size)
 
 
-def extract_video_features(video_path: str) -> tuple[np.ndarray, np.ndarray, float, int]:
+def extract_video_features(video_path: str, accuracy: int = 3) -> tuple[np.ndarray, np.ndarray, float, int]:
     """
     Extract 16-dim 'Who is Strongest' + video-lens temporal/pixel/split-seam
-    features at 320x180 with 3x3 binomial smoothing for each frame transition.
-    Returns (features [N-1, 16], is_split [N], fps, total_frames).
+    features with 3x3 binomial smoothing for each frame transition.
+    Accuracy 1..5 controls spatial resolution and frame sampling (3 = 320x180 default).
+    Returns (features [N-1, 16], is_split [N], fps, sample_count).
     """
+    preset = get_accuracy_preset(accuracy)
+    w, h = preset["width"], preset["height"]
+    half_h = h // 2
+    frame_step = preset["frame_step"]
+
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         raise RuntimeError(f"Could not open video: {video_path}")
 
     fps = float(cap.get(cv2.CAP_PROP_FPS) or 60.0)
-    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
 
     frames_f, frames_u8 = [], []
     h_full, h_top, h_bot, seams, lumas = [], [], [], [], []
 
+    raw_idx = 0
     while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
-        s = cv2.resize(frame, (320, 180), interpolation=cv2.INTER_AREA)
+        if frame_step > 1:
+            if not cap.grab():
+                break
+            if raw_idx % frame_step != 0:
+                raw_idx += 1
+                continue
+            ret, frame = cap.retrieve()
+            if not ret or frame is None:
+                raw_idx += 1
+                continue
+        else:
+            ret, frame = cap.read()
+            if not ret:
+                break
+        raw_idx += 1
+
+        s = cv2.resize(frame, (w, h), interpolation=cv2.INTER_AREA)
         # video-lens Gaussian pre-blur reduces codec compression shimmer before diffing
         s_blur_f = cv2.sepFilter2D(s.astype(np.float32), -1, _GAUSS_1D, _GAUSS_1D)
         s_blur_u8 = np.clip(np.round(s_blur_f), 0, 255).astype(np.uint8)
@@ -70,8 +109,8 @@ def extract_video_features(video_path: str) -> tuple[np.ndarray, np.ndarray, flo
         frames_f.append(sf)
         frames_u8.append(s_blur_u8)
         h_full.append(_frame_hist_hs(s))
-        h_top.append(_frame_hist_hs(s[:90]))
-        h_bot.append(_frame_hist_hs(s[90:]))
+        h_top.append(_frame_hist_hs(s[:half_h]))
+        h_bot.append(_frame_hist_hs(s[half_h:]))
         seams.append(_seam_spike(sf))
         lumas.append(float(np.mean(sf)))
 
@@ -80,10 +119,11 @@ def extract_video_features(video_path: str) -> tuple[np.ndarray, np.ndarray, flo
     if n < 2:
         raise RuntimeError(f"Video has fewer than 2 readable frames: {video_path}")
 
+    eff_fps = fps / frame_step
     seams_np = np.array(seams, dtype=np.float32)
     lumas_np = np.array(lumas, dtype=np.float32)
-    k = max(3, int(round(0.10 * fps)))  # ~6 frames at 60fps
-    local_win = max(6, int(round(0.25 * fps)))  # +-0.25s neighborhood for video-lens cut ratio
+    k = max(2 if frame_step > 1 else 3, int(round(0.10 * eff_fps)))  # ~6 frames at 60fps
+    local_win = max(4 if frame_step > 1 else 6, int(round(0.25 * eff_fps)))  # +-0.25s neighborhood for video-lens cut ratio
 
     is_split = np.zeros(n, dtype=bool)
     for i in range(n):

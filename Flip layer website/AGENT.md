@@ -1633,3 +1633,23 @@ At the end of every prompt where changes are made:
 - **Invariants / Rules to Uphold**:
   - Keep `V < 18` dark-bin collapse and `320×180` `[0.25, 0.5, 0.25]` Gaussian smoothing identical between `features.py` and `clipcut_browser.js`.
   - Keep `Math.ceil((frameIdx * 1000) / fps - 1e-5)` for all XML frame-to-ms exports.
+
+
+### 2026-11-15 — Adjustable Clip Cut Accuracy / Speed Control (`1` Turbo .. `3` Default .. `5` Ultra)
+- **Operator Request**: Add a website control to increase or decrease clip-cutting accuracy (making higher accuracy slower and lower accuracy faster), keeping the pre-request behavior as the default.
+- **Files Modified**:
+  - `C:\Users\jeduc\Downloads\Flippy v5\index.html` (`#xmlBeatAccuracy` slider `1..5`, `clipcut_browser.js?v=2.6`, `fx.js?v=5.5`)
+  - `C:\Users\jeduc\Downloads\Flippy v5\fx.js` (localStorage persistence `flippy_v5_beat_accuracy`, live label, forwards `accuracy` to `/__flippy_detect_beats` and `detectBeatsInBrowser`)
+  - `C:\Users\jeduc\Downloads\Flippy v5\clipcut_browser.js` (`ACCURACY_PRESETS`, dynamic seam-band height scaling, `settleVideoFrame(frames, ms)`, `frameStep` stride on `1..2`, second-pass sub-window refinement on `4..5`)
+  - `C:\Users\jeduc\Downloads\Flippy v5\server.js` (parses `accuracy` query param and passes `--accuracy` to `detect_cuts.py`)
+  - `C:\Users\jeduc\Downloads\Flippy v5\clip_beat_marker\features.py` (`ACCURACY_PRESETS`, `get_accuracy_preset`, `grab()` frame-step skipping for `1..2`, resolution scaling `160×90`..`640×360`, proportional `_seam_spike`)
+  - `C:\Users\jeduc\Downloads\Flippy v5\clip_beat_marker\detect_cuts.py` (`--accuracy 1..5`, `_refine_cuts_highres` on levels `4..5`)
+  - `C:\Users\jeduc\Downloads\Flippy v5\sw.js` (`flippy-v5-pwa-v4`)
+- **Specific Adjustments Made**:
+  - Preserved Level `3` (`Default`) as exact pre-change baseline (`320×180`, 1-frame step, `18ms`/1-rAF compositor settle, `probThreshold = 0.75`).
+  - Decreasing accuracy (`1=Turbo`, `2=Fast`) steps frames (`3`/`2`), skips compositor settle in browser (`0ms`), and downscales spatial resolution to `160×90`.
+  - Increasing accuracy (`4=High`, `5=Ultra`) increases spatial resolution (`480×270` / `640×360`), lengthens browser settle (`28ms`/`42ms` over 2 rAFs), and runs a second-pass sub-window peak verification (`±1`/`±2` frames).
+  - Verified syntax via `node --check` on all 4 JS files + `python -m py_compile` on both Python files, and benchmarked `detect_cuts.py` on `0404 (2)(1) 1 Rhea1(1).mp4`: `acc=1` `4.14s` (`33` cuts), `acc=3` `12.13s` (`33` cuts), `acc=5` `34.92s` (`33` cuts).
+- **Invariants / Rules to Uphold**:
+  - Level `3` (`Default`) must always remain identical to the trained `320×180` 1-frame baseline.
+  - Keep `seams` row indices proportionally scaled to canvas/frame height `h / 180` in both `features.py` and `clipcut_browser.js`.
